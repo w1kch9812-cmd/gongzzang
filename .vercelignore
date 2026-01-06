@@ -1,0 +1,28 @@
+# 개발 도구
+scripts/
+docs/
+*.bat
+*.sh
+*.ps1
+*.log
+*.ps1
+generate-pmtiles.ps1
+OPTIMIZATION_REQUIREMENTS.md
+tsconfig.tsbuildinfo
+
+# 임시 파일
+temp/
+.next/
+node_modules/
+.wrangler/
+rawdata/
+
+# 대용량 데이터 → Cloudflare R2로 서빙
+public/tiles/
+public/data/
+
+# 기타
+.vscode/
+.claude/
+*.md
+!README.md

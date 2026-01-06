@@ -1,0 +1,54 @@
+// lib/utils/logger.ts - 환경 기반 로거
+// 개발 환경에서만 로그 출력, 프로덕션에서는 warn/error만 출력
+
+const isDev = process.env.NODE_ENV === 'development';
+
+export const logger = {
+    /** 일반 로그 (개발 환경에서만 출력) */
+    log: (...args: unknown[]) => {
+        // 임시: 프로덕션에서도 로그 출력 (디버깅용)
+        console.log(...args);
+    },
+
+    /** 정보 로그 (개발 환경에서만 출력) */
+    info: (...args: unknown[]) => {
+        if (isDev) console.info(...args);
+    },
+
+    /** 디버그 로그 (개발 환경에서만 출력) */
+    debug: (...args: unknown[]) => {
+        if (isDev) console.debug(...args);
+    },
+
+    /** 경고 로그 (항상 출력) */
+    warn: (...args: unknown[]) => {
+        console.warn(...args);
+    },
+
+    /** 에러 로그 (항상 출력) */
+    error: (...args: unknown[]) => {
+        console.error(...args);
+    },
+
+    /** 성능 측정 시작 (개발 환경에서만) */
+    time: (label: string) => {
+        if (isDev) console.time(label);
+    },
+
+    /** 성능 측정 종료 (개발 환경에서만) */
+    timeEnd: (label: string) => {
+        if (isDev) console.timeEnd(label);
+    },
+
+    /** 그룹 시작 (개발 환경에서만) */
+    group: (label: string) => {
+        if (isDev) console.group(label);
+    },
+
+    /** 그룹 종료 (개발 환경에서만) */
+    groupEnd: () => {
+        if (isDev) console.groupEnd();
+    },
+};
+
+export default logger;

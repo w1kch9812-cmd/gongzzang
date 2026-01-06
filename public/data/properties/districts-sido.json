@@ -1,0 +1,240 @@
+[
+  {
+    "id": "1100000000",
+    "code": "1100000000",
+    "name": "서울특별시",
+    "coord": [
+      127.01459193435997,
+      37.55374772672175
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "2600000000",
+    "code": "2600000000",
+    "name": "부산광역시",
+    "coord": [
+      129.14955717336343,
+      35.23930476391182
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "2700000000",
+    "code": "2700000000",
+    "name": "대구광역시",
+    "coord": [
+      128.61503423582238,
+      35.86790023016715
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "2800000000",
+    "code": "2800000000",
+    "name": "인천광역시",
+    "coord": [
+      126.68864065174255,
+      37.541550513117166
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "2900000000",
+    "code": "2900000000",
+    "name": "광주광역시",
+    "coord": [
+      126.88376967377586,
+      35.164140804592826
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "3000000000",
+    "code": "3000000000",
+    "name": "대전광역시",
+    "coord": [
+      127.4090273312898,
+      36.36016194438333
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "3100000000",
+    "code": "3100000000",
+    "name": "울산광역시",
+    "coord": [
+      129.2064044578217,
+      35.55270220009075
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "3600000000",
+    "code": "3600000000",
+    "name": "세종특별자치시",
+    "coord": [
+      127.27757744249891,
+      36.504629299732905
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4100000000",
+    "code": "4100000000",
+    "name": "경기도",
+    "coord": [
+      127.42401405050552,
+      37.36610586321921
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4300000000",
+    "code": "4300000000",
+    "name": "충청북도",
+    "coord": [
+      127.66333106465827,
+      36.81605154986557
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4400000000",
+    "code": "4400000000",
+    "name": "충청남도",
+    "coord": [
+      126.89665415093457,
+      36.43416135547696
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4600000000",
+    "code": "4600000000",
+    "name": "전라남도",
+    "coord": [
+      127.2503442548148,
+      35.06400263071566
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4700000000",
+    "code": "4700000000",
+    "name": "경상북도",
+    "coord": [
+      128.9814398076456,
+      36.62339794643023
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "4800000000",
+    "code": "4800000000",
+    "name": "경상남도",
+    "coord": [
+      127.98396193789132,
+      35.39444990081044
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "5000000000",
+    "code": "5000000000",
+    "name": "제주특별자치도",
+    "coord": [
+      126.56921394974219,
+      33.38348126182864
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "5100000000",
+    "code": "5100000000",
+    "name": "강원특별자치도",
+    "coord": [
+      128.3096307099803,
+      37.73338531015139
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "5200000000",
+    "code": "5200000000",
+    "name": "전북특별자치도",
+    "coord": [
+      127.27928487005435,
+      35.695686562929616
+    ],
+    "level": "sido",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  }
+]

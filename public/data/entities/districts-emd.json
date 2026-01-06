@@ -1,0 +1,3767 @@
+[
+  {
+    "id": "28710340",
+    "code": "28710340",
+    "name": "화도면",
+    "sigCode": "28710",
+    "coord": [
+      126.42104469299215,
+      37.6204393622947
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110152",
+    "code": "28110152",
+    "name": "무의동",
+    "sigCode": "28110",
+    "coord": [
+      126.42243866686353,
+      37.38082034269155
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710330",
+    "code": "28710330",
+    "name": "길상면",
+    "sigCode": "28710",
+    "coord": [
+      126.49409479760446,
+      37.62530954073598
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11110175",
+    "code": "11110175",
+    "name": "숭인동",
+    "sigCode": "11110",
+    "coord": [
+      127.0195870151555,
+      37.574788546135146
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140171",
+    "code": "11140171",
+    "name": "중림동",
+    "sigCode": "11140",
+    "coord": [
+      126.9663345063444,
+      37.558835689935705
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140142",
+    "code": "11140142",
+    "name": "예장동",
+    "sigCode": "11140",
+    "coord": [
+      126.9896055316169,
+      37.55518194240071
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140167",
+    "code": "11140167",
+    "name": "정동",
+    "sigCode": "11140",
+    "coord": [
+      126.97299071815729,
+      37.56695161832436
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140174",
+    "code": "11140174",
+    "name": "만리동2가",
+    "sigCode": "11140",
+    "coord": [
+      126.96364606042052,
+      37.55474899101415
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140163",
+    "code": "11140163",
+    "name": "흥인동",
+    "sigCode": "11140",
+    "coord": [
+      127.01651686064658,
+      37.568805761134044
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140164",
+    "code": "11140164",
+    "name": "무학동",
+    "sigCode": "11140",
+    "coord": [
+      127.01520397473544,
+      37.56411913217762
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140112",
+    "code": "11140112",
+    "name": "남창동",
+    "sigCode": "11140",
+    "coord": [
+      126.97704074251206,
+      37.55876526565438
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140119",
+    "code": "11140119",
+    "name": "봉래동1가",
+    "sigCode": "11140",
+    "coord": [
+      126.97336005204507,
+      37.55966984371968
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11140117",
+    "code": "11140117",
+    "name": "남대문로4가",
+    "sigCode": "11140",
+    "coord": [
+      126.97653097244451,
+      37.56069036436509
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11290111",
+    "code": "11290111",
+    "name": "삼선동1가",
+    "sigCode": "11290",
+    "coord": [
+      127.00836774532092,
+      37.586336686947575
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "11560130",
+    "code": "11560130",
+    "name": "양평동6가",
+    "sigCode": "11560",
+    "coord": [
+      126.88958140831001,
+      37.54264027398668
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110104",
+    "code": "27110104",
+    "name": "동인동4가",
+    "sigCode": "27110",
+    "coord": [
+      128.61043635805032,
+      35.86776218018137
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110137",
+    "code": "27110137",
+    "name": "남성로",
+    "sigCode": "27110",
+    "coord": [
+      128.59067566280763,
+      35.867682783873
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110109",
+    "code": "27110109",
+    "name": "장관동",
+    "sigCode": "27110",
+    "coord": [
+      128.59047602229552,
+      35.86879759489025
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110114",
+    "code": "27110114",
+    "name": "종로2가",
+    "sigCode": "27110",
+    "coord": [
+      128.59194718930934,
+      35.868325818810554
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110139",
+    "code": "27110139",
+    "name": "계산동2가",
+    "sigCode": "27110",
+    "coord": [
+      128.58855851967317,
+      35.867498664970306
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110119",
+    "code": "27110119",
+    "name": "동성로3가",
+    "sigCode": "27110",
+    "coord": [
+      128.5938510131441,
+      35.867453322187046
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110142",
+    "code": "27110142",
+    "name": "서성로2가",
+    "sigCode": "27110",
+    "coord": [
+      128.5872866655127,
+      35.87005222448932
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110136",
+    "code": "27110136",
+    "name": "하서동",
+    "sigCode": "27110",
+    "coord": [
+      128.58814426032745,
+      35.87020643465425
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110138",
+    "code": "27110138",
+    "name": "계산동1가",
+    "sigCode": "27110",
+    "coord": [
+      128.58633128286496,
+      35.869249943751285
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "27110116",
+    "code": "27110116",
+    "name": "동일동",
+    "sigCode": "27110",
+    "coord": [
+      128.59183243634453,
+      35.86940356245278
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110117",
+    "code": "28110117",
+    "name": "항동6가",
+    "sigCode": "28110",
+    "coord": [
+      126.62289516345143,
+      37.470031188913325
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110126",
+    "code": "28110126",
+    "name": "신흥동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.63144513248929,
+      37.46699750580016
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110127",
+    "code": "28110127",
+    "name": "신흥동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.63462314505203,
+      37.46782538176613
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110129",
+    "code": "28110129",
+    "name": "선화동",
+    "sigCode": "28110",
+    "coord": [
+      126.63786209976202,
+      37.46515337563368
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110137",
+    "code": "28110137",
+    "name": "전동",
+    "sigCode": "28110",
+    "coord": [
+      126.62610629229165,
+      37.47716948003443
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110136",
+    "code": "28110136",
+    "name": "인현동",
+    "sigCode": "28110",
+    "coord": [
+      126.63073397048508,
+      37.47489314395412
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110105",
+    "code": "28110105",
+    "name": "해안동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.61994420476478,
+      37.47284589159821
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110112",
+    "code": "28110112",
+    "name": "항동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.61675978864234,
+      37.47389833832167
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110113",
+    "code": "28110113",
+    "name": "항동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.61762091671264,
+      37.472433478675455
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110128",
+    "code": "28110128",
+    "name": "신흥동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.6246143479747,
+      37.436632884183666
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110142",
+    "code": "28110142",
+    "name": "송월동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.6233631821371,
+      37.48002462413528
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110143",
+    "code": "28110143",
+    "name": "송월동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.61899432166976,
+      37.478216148215424
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110144",
+    "code": "28110144",
+    "name": "송월동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62106980901176,
+      37.47806131902823
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110139",
+    "code": "28110139",
+    "name": "북성동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.6184551471332,
+      37.47610124987804
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110140",
+    "code": "28110140",
+    "name": "북성동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62023060375157,
+      37.47611194939941
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110119",
+    "code": "28110119",
+    "name": "송학동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.62247371925295,
+      37.47463089548601
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110141",
+    "code": "28110141",
+    "name": "선린동",
+    "sigCode": "28110",
+    "coord": [
+      126.61824345069614,
+      37.47455627724829
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110133",
+    "code": "28110133",
+    "name": "내동",
+    "sigCode": "28110",
+    "coord": [
+      126.62805318177877,
+      37.472954922586894
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110120",
+    "code": "28110120",
+    "name": "송학동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.62460381437823,
+      37.473947247940885
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110121",
+    "code": "28110121",
+    "name": "송학동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62598883954793,
+      37.47344037063994
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110109",
+    "code": "28110109",
+    "name": "관동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.62158063380522,
+      37.47368032144174
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110135",
+    "code": "28110135",
+    "name": "용동",
+    "sigCode": "28110",
+    "coord": [
+      126.63119160324868,
+      37.47319161843084
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110101",
+    "code": "28110101",
+    "name": "중앙동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.62045686696078,
+      37.473454146246304
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110134",
+    "code": "28110134",
+    "name": "경동",
+    "sigCode": "28110",
+    "coord": [
+      126.63238211148442,
+      37.47218198856466
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110110",
+    "code": "28110110",
+    "name": "관동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.62352279843056,
+      37.472743290323464
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110102",
+    "code": "28110102",
+    "name": "중앙동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.62173777239687,
+      37.472784656349916
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110106",
+    "code": "28110106",
+    "name": "해안동2가",
+    "sigCode": "28110",
+    "coord": [
+      126.62119143831606,
+      37.47218070210343
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110114",
+    "code": "28110114",
+    "name": "항동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.61937665948832,
+      37.47205598305568
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110103",
+    "code": "28110103",
+    "name": "중앙동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62288221342031,
+      37.47199095137407
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110111",
+    "code": "28110111",
+    "name": "관동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62478024255716,
+      37.47205833944015
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110131",
+    "code": "28110131",
+    "name": "율목동",
+    "sigCode": "28110",
+    "coord": [
+      126.63269822696964,
+      37.470369519575264
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110115",
+    "code": "28110115",
+    "name": "항동4가",
+    "sigCode": "28110",
+    "coord": [
+      126.62051587604694,
+      37.47139874676574
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110104",
+    "code": "28110104",
+    "name": "중앙동4가",
+    "sigCode": "28110",
+    "coord": [
+      126.62410881751768,
+      37.47130685488261
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110124",
+    "code": "28110124",
+    "name": "신포동",
+    "sigCode": "28110",
+    "coord": [
+      126.62674650016545,
+      37.47107503680242
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110107",
+    "code": "28110107",
+    "name": "해안동3가",
+    "sigCode": "28110",
+    "coord": [
+      126.62229826099224,
+      37.47135552794187
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110125",
+    "code": "28110125",
+    "name": "답동",
+    "sigCode": "28110",
+    "coord": [
+      126.62922770127238,
+      37.46980370940569
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110116",
+    "code": "28110116",
+    "name": "항동5가",
+    "sigCode": "28110",
+    "coord": [
+      126.62172468316928,
+      37.47070626444039
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110108",
+    "code": "28110108",
+    "name": "해안동4가",
+    "sigCode": "28110",
+    "coord": [
+      126.62350781719178,
+      37.47067123284715
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110130",
+    "code": "28110130",
+    "name": "유동",
+    "sigCode": "28110",
+    "coord": [
+      126.63656839951771,
+      37.469636578349
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110151",
+    "code": "28110151",
+    "name": "덕교동",
+    "sigCode": "28110",
+    "coord": [
+      126.42176814848197,
+      37.43621775465684
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110146",
+    "code": "28110146",
+    "name": "운남동",
+    "sigCode": "28110",
+    "coord": [
+      126.53162678998854,
+      37.48653946181295
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110122",
+    "code": "28110122",
+    "name": "사동",
+    "sigCode": "28110",
+    "coord": [
+      126.62554857527842,
+      37.46878503037608
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110123",
+    "code": "28110123",
+    "name": "신생동",
+    "sigCode": "28110",
+    "coord": [
+      126.6289337343284,
+      37.46583315707785
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110132",
+    "code": "28110132",
+    "name": "도원동",
+    "sigCode": "28110",
+    "coord": [
+      126.6401627120094,
+      37.46709368175299
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110138",
+    "code": "28110138",
+    "name": "북성동1가",
+    "sigCode": "28110",
+    "coord": [
+      126.60253827962437,
+      37.47213587832955
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110147",
+    "code": "28110147",
+    "name": "운서동",
+    "sigCode": "28110",
+    "coord": [
+      126.45480085665619,
+      37.46628519681389
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110150",
+    "code": "28110150",
+    "name": "남북동",
+    "sigCode": "28110",
+    "coord": [
+      126.41294152533531,
+      37.44984662192092
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110118",
+    "code": "28110118",
+    "name": "항동7가",
+    "sigCode": "28110",
+    "coord": [
+      126.61979726239107,
+      37.453139413731655
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110149",
+    "code": "28110149",
+    "name": "을왕동",
+    "sigCode": "28110",
+    "coord": [
+      126.38112100459168,
+      37.44922385407131
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110145",
+    "code": "28110145",
+    "name": "중산동",
+    "sigCode": "28110",
+    "coord": [
+      126.56380463517021,
+      37.49576523867651
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110148",
+    "code": "28110148",
+    "name": "운북동",
+    "sigCode": "28110",
+    "coord": [
+      126.51397146273445,
+      37.51709199052924
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140106",
+    "code": "28140106",
+    "name": "금곡동",
+    "sigCode": "28140",
+    "coord": [
+      126.64192396169213,
+      37.47288515467155
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140104",
+    "code": "28140104",
+    "name": "화평동",
+    "sigCode": "28140",
+    "coord": [
+      126.63099970205661,
+      37.47909261829745
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140102",
+    "code": "28140102",
+    "name": "화수동",
+    "sigCode": "28140",
+    "coord": [
+      126.63052414318615,
+      37.48473249885724
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140101",
+    "code": "28140101",
+    "name": "만석동",
+    "sigCode": "28140",
+    "coord": [
+      126.6218348206793,
+      37.48487866083494
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140105",
+    "code": "28140105",
+    "name": "창영동",
+    "sigCode": "28140",
+    "coord": [
+      126.64069735329545,
+      37.47065722293275
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140107",
+    "code": "28140107",
+    "name": "송림동",
+    "sigCode": "28140",
+    "coord": [
+      126.64755054187304,
+      37.475118441296445
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140103",
+    "code": "28140103",
+    "name": "송현동",
+    "sigCode": "28140",
+    "coord": [
+      126.64062164977513,
+      37.48965534544177
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185103",
+    "code": "28185103",
+    "name": "연수동",
+    "sigCode": "28185",
+    "coord": [
+      126.68520756941277,
+      37.418651097180835
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185104",
+    "code": "28185104",
+    "name": "청학동",
+    "sigCode": "28185",
+    "coord": [
+      126.66531554246232,
+      37.42122152740643
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185106",
+    "code": "28185106",
+    "name": "송도동",
+    "sigCode": "28185",
+    "coord": [
+      126.63226726069183,
+      37.393686576212595
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200109",
+    "code": "28200109",
+    "name": "도림동",
+    "sigCode": "28200",
+    "coord": [
+      126.72939503156192,
+      37.42041280866586
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200111",
+    "code": "28200111",
+    "name": "고잔동",
+    "sigCode": "28200",
+    "coord": [
+      126.69185713941269,
+      37.396943515941395
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200102",
+    "code": "28200102",
+    "name": "간석동",
+    "sigCode": "28200",
+    "coord": [
+      126.71468917164185,
+      37.46868754065904
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200105",
+    "code": "28200105",
+    "name": "서창동",
+    "sigCode": "28200",
+    "coord": [
+      126.74937441592304,
+      37.429413784880744
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200110",
+    "code": "28200110",
+    "name": "논현동",
+    "sigCode": "28200",
+    "coord": [
+      126.73013536355793,
+      37.40178279543657
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200106",
+    "code": "28200106",
+    "name": "운연동",
+    "sigCode": "28200",
+    "coord": [
+      126.76410137631767,
+      37.43680914477315
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200101",
+    "code": "28200101",
+    "name": "구월동",
+    "sigCode": "28200",
+    "coord": [
+      126.71119404092877,
+      37.44767583510073
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200107",
+    "code": "28200107",
+    "name": "남촌동",
+    "sigCode": "28200",
+    "coord": [
+      126.71398994400293,
+      37.428798237943624
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200104",
+    "code": "28200104",
+    "name": "장수동",
+    "sigCode": "28200",
+    "coord": [
+      126.75469266531697,
+      37.455870452291045
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200103",
+    "code": "28200103",
+    "name": "만수동",
+    "sigCode": "28200",
+    "coord": [
+      126.73155812945518,
+      37.461269491676994
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200108",
+    "code": "28200108",
+    "name": "수산동",
+    "sigCode": "28200",
+    "coord": [
+      126.7292576871077,
+      37.43541671852843
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237107",
+    "code": "28237107",
+    "name": "부개동",
+    "sigCode": "28237",
+    "coord": [
+      126.73833964718301,
+      37.49916873128762
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237105",
+    "code": "28237105",
+    "name": "삼산동",
+    "sigCode": "28237",
+    "coord": [
+      126.7395834571896,
+      37.516909586618
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237102",
+    "code": "28237102",
+    "name": "십정동",
+    "sigCode": "28237",
+    "coord": [
+      126.7005470397293,
+      37.47670937026021
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237106",
+    "code": "28237106",
+    "name": "갈산동",
+    "sigCode": "28237",
+    "coord": [
+      126.72590507594599,
+      37.51280034635226
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237104",
+    "code": "28237104",
+    "name": "청천동",
+    "sigCode": "28237",
+    "coord": [
+      126.71300849378743,
+      37.51555103814639
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237103",
+    "code": "28237103",
+    "name": "산곡동",
+    "sigCode": "28237",
+    "coord": [
+      126.70230801719704,
+      37.499552204247884
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245104",
+    "code": "28245104",
+    "name": "서운동",
+    "sigCode": "28245",
+    "coord": [
+      126.75107974808316,
+      37.53109617443559
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245106",
+    "code": "28245106",
+    "name": "용종동",
+    "sigCode": "28245",
+    "coord": [
+      126.74051574160595,
+      37.54028636063232
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245107",
+    "code": "28245107",
+    "name": "병방동",
+    "sigCode": "28245",
+    "coord": [
+      126.74771994965259,
+      37.548247328167164
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245102",
+    "code": "28245102",
+    "name": "계산동",
+    "sigCode": "28245",
+    "coord": [
+      126.7186231597765,
+      37.5444238230525
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245121",
+    "code": "28245121",
+    "name": "목상동",
+    "sigCode": "28245",
+    "coord": [
+      126.70915100685521,
+      37.560949730807465
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245113",
+    "code": "28245113",
+    "name": "하야동",
+    "sigCode": "28245",
+    "coord": [
+      126.78762169601818,
+      37.58119377927514
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245114",
+    "code": "28245114",
+    "name": "평동",
+    "sigCode": "28245",
+    "coord": [
+      126.77473401709467,
+      37.582394805110084
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245105",
+    "code": "28245105",
+    "name": "임학동",
+    "sigCode": "28245",
+    "coord": [
+      126.73419003467693,
+      37.547172730555104
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245108",
+    "code": "28245108",
+    "name": "방축동",
+    "sigCode": "28245",
+    "coord": [
+      126.7352660604483,
+      37.55505095733917
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245110",
+    "code": "28245110",
+    "name": "동양동",
+    "sigCode": "28245",
+    "coord": [
+      126.75796443210902,
+      37.55959750460164
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245101",
+    "code": "28245101",
+    "name": "효성동",
+    "sigCode": "28245",
+    "coord": [
+      126.70278713463237,
+      37.532249852265736
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245103",
+    "code": "28245103",
+    "name": "작전동",
+    "sigCode": "28245",
+    "coord": [
+      126.72979123130216,
+      37.529785207965695
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245111",
+    "code": "28245111",
+    "name": "귤현동",
+    "sigCode": "28245",
+    "coord": [
+      126.73970297180816,
+      37.56637089136027
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245119",
+    "code": "28245119",
+    "name": "갈현동",
+    "sigCode": "28245",
+    "coord": [
+      126.72161133447237,
+      37.576479235912316
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245123",
+    "code": "28245123",
+    "name": "장기동",
+    "sigCode": "28245",
+    "coord": [
+      126.73564759850784,
+      37.57584493156322
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245122",
+    "code": "28245122",
+    "name": "다남동",
+    "sigCode": "28245",
+    "coord": [
+      126.72195014848393,
+      37.56439209128426
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245117",
+    "code": "28245117",
+    "name": "이화동",
+    "sigCode": "28245",
+    "coord": [
+      126.73792689187765,
+      37.58587645270816
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245116",
+    "code": "28245116",
+    "name": "선주지동",
+    "sigCode": "28245",
+    "coord": [
+      126.74463306822487,
+      37.57838609893781
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245118",
+    "code": "28245118",
+    "name": "오류동",
+    "sigCode": "28245",
+    "coord": [
+      126.72592567761468,
+      37.58561880462404
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245115",
+    "code": "28245115",
+    "name": "노오지동",
+    "sigCode": "28245",
+    "coord": [
+      126.75754871619475,
+      37.58190917860193
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245120",
+    "code": "28245120",
+    "name": "둑실동",
+    "sigCode": "28245",
+    "coord": [
+      126.70351153769268,
+      37.575347940423505
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245112",
+    "code": "28245112",
+    "name": "상야동",
+    "sigCode": "28245",
+    "coord": [
+      126.76682773446527,
+      37.57661478790888
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245109",
+    "code": "28245109",
+    "name": "박촌동",
+    "sigCode": "28245",
+    "coord": [
+      126.74454902577746,
+      37.5572687455412
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260118",
+    "code": "28260118",
+    "name": "금곡동",
+    "sigCode": "28260",
+    "coord": [
+      126.64298022619701,
+      37.61455846681086
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260110",
+    "code": "28260110",
+    "name": "석남동",
+    "sigCode": "28260",
+    "coord": [
+      126.67750726054673,
+      37.505751734639674
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260112",
+    "code": "28260112",
+    "name": "가좌동",
+    "sigCode": "28260",
+    "coord": [
+      126.67851148282122,
+      37.48711661623474
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260104",
+    "code": "28260104",
+    "name": "경서동",
+    "sigCode": "28260",
+    "coord": [
+      126.6488681739254,
+      37.55474345536343
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260102",
+    "code": "28260102",
+    "name": "시천동",
+    "sigCode": "28260",
+    "coord": [
+      126.69138599420465,
+      37.57087751559175
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260114",
+    "code": "28260114",
+    "name": "당하동",
+    "sigCode": "28260",
+    "coord": [
+      126.70193137485451,
+      37.58672610646621
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260105",
+    "code": "28260105",
+    "name": "공촌동",
+    "sigCode": "28260",
+    "coord": [
+      126.69686373312891,
+      37.55051967695541
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260121",
+    "code": "28260121",
+    "name": "불로동",
+    "sigCode": "28260",
+    "coord": [
+      126.68813604325777,
+      37.61047766116021
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260120",
+    "code": "28260120",
+    "name": "왕길동",
+    "sigCode": "28260",
+    "coord": [
+      126.65235765947587,
+      37.591460328179004
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260113",
+    "code": "28260113",
+    "name": "마전동",
+    "sigCode": "28260",
+    "coord": [
+      126.66883508707802,
+      37.60513095201853
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260117",
+    "code": "28260117",
+    "name": "대곡동",
+    "sigCode": "28260",
+    "coord": [
+      126.66828751984309,
+      37.62370744326996
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260109",
+    "code": "28260109",
+    "name": "신현동",
+    "sigCode": "28260",
+    "coord": [
+      126.66755004370278,
+      37.51799998342798
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260115",
+    "code": "28260115",
+    "name": "원당동",
+    "sigCode": "28260",
+    "coord": [
+      126.71094674497873,
+      37.59823896853789
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260111",
+    "code": "28260111",
+    "name": "원창동",
+    "sigCode": "28260",
+    "coord": [
+      126.61261127173132,
+      37.50383883517243
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260122",
+    "code": "28260122",
+    "name": "청라동",
+    "sigCode": "28260",
+    "coord": [
+      126.62624701517032,
+      37.534400872273594
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260119",
+    "code": "28260119",
+    "name": "오류동",
+    "sigCode": "28260",
+    "coord": [
+      126.62549026211255,
+      37.594212582784934
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710400",
+    "code": "28710400",
+    "name": "교동면",
+    "sigCode": "28710",
+    "coord": [
+      126.24957455393317,
+      37.790166749045156
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710410",
+    "code": "28710410",
+    "name": "삼산면",
+    "sigCode": "28710",
+    "coord": [
+      126.34778598910631,
+      37.676042201708995
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710370",
+    "code": "28710370",
+    "name": "하점면",
+    "sigCode": "28710",
+    "coord": [
+      126.40525266527642,
+      37.762952649763164
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710380",
+    "code": "28710380",
+    "name": "양사면",
+    "sigCode": "28710",
+    "coord": [
+      126.41360715191176,
+      37.80537608150701
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710350",
+    "code": "28710350",
+    "name": "양도면",
+    "sigCode": "28710",
+    "coord": [
+      126.4327221203558,
+      37.66662689550655
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710360",
+    "code": "28710360",
+    "name": "내가면",
+    "sigCode": "28710",
+    "coord": [
+      126.38655157082201,
+      37.71954445307749
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710310",
+    "code": "28710310",
+    "name": "선원면",
+    "sigCode": "28710",
+    "coord": [
+      126.49338282537956,
+      37.71716202528149
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710390",
+    "code": "28710390",
+    "name": "송해면",
+    "sigCode": "28710",
+    "coord": [
+      126.46207264933129,
+      37.78091092346239
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710250",
+    "code": "28710250",
+    "name": "강화읍",
+    "sigCode": "28710",
+    "coord": [
+      126.49790302178248,
+      37.75335032568051
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710320",
+    "code": "28710320",
+    "name": "불은면",
+    "sigCode": "28710",
+    "coord": [
+      126.50074592875863,
+      37.68134782851621
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710420",
+    "code": "28710420",
+    "name": "서도면",
+    "sigCode": "28710",
+    "coord": [
+      126.18931292641895,
+      37.674930809137955
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720350",
+    "code": "28720350",
+    "name": "덕적면",
+    "sigCode": "28720",
+    "coord": [
+      126.12890752036407,
+      37.22851751892943
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720330",
+    "code": "28720330",
+    "name": "백령면",
+    "sigCode": "28720",
+    "coord": [
+      124.67845087187219,
+      37.95070142631963
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720360",
+    "code": "28720360",
+    "name": "영흥면",
+    "sigCode": "28720",
+    "coord": [
+      126.45865650654957,
+      37.25816700177742
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720370",
+    "code": "28720370",
+    "name": "자월면",
+    "sigCode": "28720",
+    "coord": [
+      126.31190344825615,
+      37.25618615060787
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720340",
+    "code": "28720340",
+    "name": "대청면",
+    "sigCode": "28720",
+    "coord": [
+      124.7026994659226,
+      37.82457342828123
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720380",
+    "code": "28720380",
+    "name": "연평면",
+    "sigCode": "28720",
+    "coord": [
+      125.69833179341293,
+      37.666932367186526
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720310",
+    "code": "28720310",
+    "name": "북도면",
+    "sigCode": "28720",
+    "coord": [
+      126.45765664544595,
+      37.52754125728902
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177106",
+    "code": "28177106",
+    "name": "관교동",
+    "sigCode": "28177",
+    "coord": [
+      126.69687685825994,
+      37.44179706655037
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48170410",
+    "code": "48170410",
+    "name": "금산면",
+    "sigCode": "48170",
+    "coord": [
+      128.15351621378642,
+      35.210355760557874
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260106",
+    "code": "28260106",
+    "name": "연희동",
+    "sigCode": "28260",
+    "coord": [
+      126.66389519994885,
+      37.54522001803861
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260107",
+    "code": "28260107",
+    "name": "심곡동",
+    "sigCode": "28260",
+    "coord": [
+      126.68212081872377,
+      37.54135445123329
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260108",
+    "code": "28260108",
+    "name": "가정동",
+    "sigCode": "28260",
+    "coord": [
+      126.67215214804982,
+      37.531852701073205
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260103",
+    "code": "28260103",
+    "name": "검암동",
+    "sigCode": "28260",
+    "coord": [
+      126.67539382495475,
+      37.56379099508615
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260101",
+    "code": "28260101",
+    "name": "백석동",
+    "sigCode": "28260",
+    "coord": [
+      126.66942144006424,
+      37.57853966162314
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "51230310",
+    "code": "51230310",
+    "name": "근덕면",
+    "sigCode": "51230",
+    "coord": [
+      129.26086375143444,
+      37.28393026055774
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180250",
+    "code": "44180250",
+    "name": "웅천읍",
+    "sigCode": "44180",
+    "coord": [
+      126.59878643928519,
+      36.24786457088391
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180400",
+    "code": "44180400",
+    "name": "성주면",
+    "sigCode": "44180",
+    "coord": [
+      126.65477243238792,
+      36.332596932510356
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180106",
+    "code": "44180106",
+    "name": "궁촌동",
+    "sigCode": "44180",
+    "coord": [
+      126.59432565733407,
+      36.34146219161009
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180410",
+    "code": "44180410",
+    "name": "주교면",
+    "sigCode": "44180",
+    "coord": [
+      126.54626165283625,
+      36.37818773938398
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180340",
+    "code": "44180340",
+    "name": "청소면",
+    "sigCode": "44180",
+    "coord": [
+      126.612446038401,
+      36.452214969815046
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180310",
+    "code": "44180310",
+    "name": "주포면",
+    "sigCode": "44180",
+    "coord": [
+      126.58139492936317,
+      36.41134377551312
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180103",
+    "code": "44180103",
+    "name": "화산동",
+    "sigCode": "44180",
+    "coord": [
+      126.62729021396554,
+      36.36362977334004
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180104",
+    "code": "44180104",
+    "name": "동대동",
+    "sigCode": "44180",
+    "coord": [
+      126.61447485293911,
+      36.35087757983894
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180101",
+    "code": "44180101",
+    "name": "대천동",
+    "sigCode": "44180",
+    "coord": [
+      126.58869794226813,
+      36.35316162267911
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180108",
+    "code": "44180108",
+    "name": "남곡동",
+    "sigCode": "44180",
+    "coord": [
+      126.55456831055429,
+      36.34071354838083
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180380",
+    "code": "44180380",
+    "name": "주산면",
+    "sigCode": "44180",
+    "coord": [
+      126.6280340885016,
+      36.200557253510105
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44210112",
+    "code": "44210112",
+    "name": "오남동",
+    "sigCode": "44210",
+    "coord": [
+      126.47477445089098,
+      36.747871801346655
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110127",
+    "code": "46110127",
+    "name": "축복동2가",
+    "sigCode": "46110",
+    "coord": [
+      126.38843889320239,
+      34.78808368101863
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110130",
+    "code": "46110130",
+    "name": "보광동2가",
+    "sigCode": "46110",
+    "coord": [
+      126.38769087309115,
+      34.787410514800754
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110125",
+    "code": "46110125",
+    "name": "행복동2가",
+    "sigCode": "46110",
+    "coord": [
+      126.38621383370008,
+      34.78729166049571
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110133",
+    "code": "46110133",
+    "name": "대의동1가",
+    "sigCode": "46110",
+    "coord": [
+      126.38395572436539,
+      34.78650846080357
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110123",
+    "code": "46110123",
+    "name": "영해동2가",
+    "sigCode": "46110",
+    "coord": [
+      126.38551186805724,
+      34.786663453941614
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110122",
+    "code": "46110122",
+    "name": "영해동1가",
+    "sigCode": "46110",
+    "coord": [
+      126.38667362023284,
+      34.78583938784166
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110136",
+    "code": "46110136",
+    "name": "중앙동1가",
+    "sigCode": "46110",
+    "coord": [
+      126.38367962577331,
+      34.7861218631911
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110137",
+    "code": "46110137",
+    "name": "중앙동2가",
+    "sigCode": "46110",
+    "coord": [
+      126.38130999466694,
+      34.78579337591568
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46110139",
+    "code": "46110139",
+    "name": "만호동",
+    "sigCode": "46110",
+    "coord": [
+      126.38458506334251,
+      34.785176892104985
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "46810320",
+    "code": "46810320",
+    "name": "칠량면",
+    "sigCode": "46810",
+    "coord": [
+      126.82875193340672,
+      34.57327670023941
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180330",
+    "code": "44180330",
+    "name": "천북면",
+    "sigCode": "44180",
+    "coord": [
+      126.52079967600038,
+      36.48141378233345
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180320",
+    "code": "44180320",
+    "name": "오천면",
+    "sigCode": "44180",
+    "coord": [
+      126.52533596835407,
+      36.41725543016362
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180105",
+    "code": "44180105",
+    "name": "명천동",
+    "sigCode": "44180",
+    "coord": [
+      126.61972108813971,
+      36.333859156923914
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180110",
+    "code": "44180110",
+    "name": "신흑동",
+    "sigCode": "44180",
+    "coord": [
+      126.5261455462796,
+      36.323373386972
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180109",
+    "code": "44180109",
+    "name": "요암동",
+    "sigCode": "44180",
+    "coord": [
+      126.54927237656676,
+      36.32641678485609
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "44180360",
+    "code": "44180360",
+    "name": "남포면",
+    "sigCode": "44180",
+    "coord": [
+      126.56787110485895,
+      36.294592003251964
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177102",
+    "code": "28177102",
+    "name": "용현동",
+    "sigCode": "28177",
+    "coord": [
+      126.64098162718108,
+      37.451991061929775
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177101",
+    "code": "28177101",
+    "name": "숭의동",
+    "sigCode": "28177",
+    "coord": [
+      126.64932493109784,
+      37.46359425548945
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237101",
+    "code": "28237101",
+    "name": "부평동",
+    "sigCode": "28237",
+    "coord": [
+      126.7250453923743,
+      37.497379265898196
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237108",
+    "code": "28237108",
+    "name": "일신동",
+    "sigCode": "28237",
+    "coord": [
+      126.74258743249024,
+      37.47826299241032
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237109",
+    "code": "28237109",
+    "name": "구산동",
+    "sigCode": "28237",
+    "coord": [
+      126.7538487637847,
+      37.474005989834765
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177103",
+    "code": "28177103",
+    "name": "학익동",
+    "sigCode": "28177",
+    "coord": [
+      126.66544187494372,
+      37.44097668778011
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185102",
+    "code": "28185102",
+    "name": "선학동",
+    "sigCode": "28185",
+    "coord": [
+      126.70005108833728,
+      37.428999406002845
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177107",
+    "code": "28177107",
+    "name": "문학동",
+    "sigCode": "28177",
+    "coord": [
+      126.68298724082835,
+      37.43590785811459
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185105",
+    "code": "28185105",
+    "name": "동춘동",
+    "sigCode": "28185",
+    "coord": [
+      126.66613484786978,
+      37.40531896333608
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28185101",
+    "code": "28185101",
+    "name": "옥련동",
+    "sigCode": "28185",
+    "coord": [
+      126.65001902478976,
+      37.4236992767526
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "47250127",
+    "code": "47250127",
+    "name": "중덕동",
+    "sigCode": "47250",
+    "coord": [
+      128.1853010338221,
+      36.44615252567674
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "47250128",
+    "code": "47250128",
+    "name": "초산동",
+    "sigCode": "47250",
+    "coord": [
+      128.17182440154195,
+      36.459158342812565
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "47250104",
+    "code": "47250104",
+    "name": "복룡동",
+    "sigCode": "47250",
+    "coord": [
+      128.18517557118605,
+      36.42316701772441
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "47250105",
+    "code": "47250105",
+    "name": "냉림동",
+    "sigCode": "47250",
+    "coord": [
+      128.1620925153703,
+      36.42339436723139
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "47250106",
+    "code": "47250106",
+    "name": "서성동",
+    "sigCode": "47250",
+    "coord": [
+      128.1609281990722,
+      36.417714462988044
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48123123",
+    "code": "48123123",
+    "name": "신촌동",
+    "sigCode": "48120",
+    "coord": [
+      128.63841768196554,
+      35.21444667833683
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48123115",
+    "code": "48123115",
+    "name": "창곡동",
+    "sigCode": "48120",
+    "coord": [
+      128.64632055629582,
+      35.19648074399389
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48121105",
+    "code": "48121105",
+    "name": "도계동",
+    "sigCode": "48120",
+    "coord": [
+      128.63993004084236,
+      35.262599251587645
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48121102",
+    "code": "48121102",
+    "name": "중동",
+    "sigCode": "48120",
+    "coord": [
+      128.6281181590789,
+      35.25620790488372
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177105",
+    "code": "28177105",
+    "name": "주안동",
+    "sigCode": "28177",
+    "coord": [
+      126.6857893564052,
+      37.45670202468196
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670310",
+    "code": "41670310",
+    "name": "점동면",
+    "sigCode": "41670",
+    "coord": [
+      127.68247893821024,
+      37.196742814615895
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670114",
+    "code": "41670114",
+    "name": "삼교동",
+    "sigCode": "41670",
+    "coord": [
+      127.65767468414421,
+      37.2336506447456
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670115",
+    "code": "41670115",
+    "name": "점봉동",
+    "sigCode": "41670",
+    "coord": [
+      127.6477149569934,
+      37.25276401842262
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670120",
+    "code": "41670120",
+    "name": "천송동",
+    "sigCode": "41670",
+    "coord": [
+      127.65950244084408,
+      37.30363783937971
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670320",
+    "code": "41670320",
+    "name": "흥천면",
+    "sigCode": "41670",
+    "coord": [
+      127.5344855208383,
+      37.35067812190399
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670108",
+    "code": "41670108",
+    "name": "교동",
+    "sigCode": "41670",
+    "coord": [
+      127.63336478033952,
+      37.27526151629947
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670103",
+    "code": "41670103",
+    "name": "창동",
+    "sigCode": "41670",
+    "coord": [
+      127.63143765278338,
+      37.29191434842818
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670119",
+    "code": "41670119",
+    "name": "매룡동",
+    "sigCode": "41670",
+    "coord": [
+      127.65722317190838,
+      37.280871936938695
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670121",
+    "code": "41670121",
+    "name": "오학동",
+    "sigCode": "41670",
+    "coord": [
+      127.65347115151306,
+      37.31657103641333
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670102",
+    "code": "41670102",
+    "name": "홍문동",
+    "sigCode": "41670",
+    "coord": [
+      127.6380647813811,
+      37.28560415226479
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670110",
+    "code": "41670110",
+    "name": "가업동",
+    "sigCode": "41670",
+    "coord": [
+      127.61877313518296,
+      37.273894502341896
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670101",
+    "code": "41670101",
+    "name": "상동",
+    "sigCode": "41670",
+    "coord": [
+      127.64576187107433,
+      37.29154802052601
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670116",
+    "code": "41670116",
+    "name": "능현동",
+    "sigCode": "41670",
+    "coord": [
+      127.65625519303256,
+      37.26674181397568
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670107",
+    "code": "41670107",
+    "name": "하동",
+    "sigCode": "41670",
+    "coord": [
+      127.62193083444855,
+      37.304831508576626
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670350",
+    "code": "41670350",
+    "name": "대신면",
+    "sigCode": "41670",
+    "coord": [
+      127.61549948569257,
+      37.3750858335125
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670360",
+    "code": "41670360",
+    "name": "북내면",
+    "sigCode": "41670",
+    "coord": [
+      127.69399976192113,
+      37.34281111581552
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670123",
+    "code": "41670123",
+    "name": "오금동",
+    "sigCode": "41670",
+    "coord": [
+      127.65173270865138,
+      37.333836633136194
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670370",
+    "code": "41670370",
+    "name": "강천면",
+    "sigCode": "41670",
+    "coord": [
+      127.72101629126924,
+      37.27168475325643
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670118",
+    "code": "41670118",
+    "name": "연양동",
+    "sigCode": "41670",
+    "coord": [
+      127.66943628460074,
+      37.288162786829794
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670117",
+    "code": "41670117",
+    "name": "멱곡동",
+    "sigCode": "41670",
+    "coord": [
+      127.66502481706517,
+      37.24981020154317
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670113",
+    "code": "41670113",
+    "name": "하거동",
+    "sigCode": "41670",
+    "coord": [
+      127.63744297937583,
+      37.22670660667108
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670106",
+    "code": "41670106",
+    "name": "신진동",
+    "sigCode": "41670",
+    "coord": [
+      127.67350761642412,
+      37.27434471788434
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670345",
+    "code": "41670345",
+    "name": "세종대왕면",
+    "sigCode": "41670",
+    "coord": [
+      127.57261267942343,
+      37.27865638992498
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670250",
+    "code": "41670250",
+    "name": "가남읍",
+    "sigCode": "41670",
+    "coord": [
+      127.56210787840084,
+      37.218358796886946
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670104",
+    "code": "41670104",
+    "name": "우만동",
+    "sigCode": "41670",
+    "coord": [
+      127.6760526265054,
+      37.26017818860747
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670105",
+    "code": "41670105",
+    "name": "단현동",
+    "sigCode": "41670",
+    "coord": [
+      127.6794346764472,
+      37.26775285129249
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670111",
+    "code": "41670111",
+    "name": "연라동",
+    "sigCode": "41670",
+    "coord": [
+      127.61100253418091,
+      37.2572665343199
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670112",
+    "code": "41670112",
+    "name": "상거동",
+    "sigCode": "41670",
+    "coord": [
+      127.62961952269623,
+      37.24546439955303
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670330",
+    "code": "41670330",
+    "name": "금사면",
+    "sigCode": "41670",
+    "coord": [
+      127.50086504737826,
+      37.39993155564551
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670109",
+    "code": "41670109",
+    "name": "월송동",
+    "sigCode": "41670",
+    "coord": [
+      127.60820475543946,
+      37.28156652621123
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670380",
+    "code": "41670380",
+    "name": "산북면",
+    "sigCode": "41670",
+    "coord": [
+      127.43700724804708,
+      37.41018742100974
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "41670122",
+    "code": "41670122",
+    "name": "현암동",
+    "sigCode": "41670",
+    "coord": [
+      127.63181689456692,
+      37.315725360280794
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177104",
+    "code": "28177104",
+    "name": "도화동",
+    "sigCode": "28177",
+    "coord": [
+      126.66095186064358,
+      37.47338830701726
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "48310108",
+    "code": "48310108",
+    "name": "장평동",
+    "sigCode": "48310",
+    "coord": [
+      128.5968094341945,
+      34.89251907355683
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "52140120",
+    "code": "52140120",
+    "name": "신용동",
+    "sigCode": "52140",
+    "coord": [
+      126.95050768999486,
+      35.97842285620326
+    ],
+    "level": "emd",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  }
+]

@@ -1,0 +1,1350 @@
+[
+  {
+    "id": "kic-1",
+    "name": "계양DSE",
+    "roadAddress": "인천광역시 계양구 서운산단로1길 19",
+    "jibunAddress": "인천광역시 계양구 서운동 222번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 9599.2,
+    "buildingArea": 40346.62,
+    "coord": [
+      126.7532383,
+      37.5318902
+    ],
+    "sigName": "계양구",
+    "complexName": "인천서운일반산업단지",
+    "pnu": "2824510400102220000"
+  },
+  {
+    "id": "kic-2",
+    "name": "구월테크노밸리 지식산업센터 1-1",
+    "roadAddress": "인천광역시 남동구 구월동 1550-1 구월테크노밸리",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 14388.52,
+    "buildingArea": 10133.25,
+    "coord": [
+      126.70968062342675,
+      37.44020697458341
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820010100115500001"
+  },
+  {
+    "id": "kic-3",
+    "name": "구월테크노밸리 지식산업센터(C동)",
+    "roadAddress": "인천광역시 남동구 구월동 1550-3 구월테크노밸리",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 17522.81,
+    "buildingArea": 13787.13,
+    "coord": [
+      126.70975541272422,
+      37.439495374416666
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820010100115500003"
+  },
+  {
+    "id": "kic-4",
+    "name": "구월테크노밸리(B동)",
+    "roadAddress": "인천광역시 남동구 구월동 1550-2 구월테크노밸리",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 17909.26,
+    "buildingArea": 13214.54,
+    "coord": [
+      126.70969936396716,
+      37.439838811799206
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820010100115500002"
+  },
+  {
+    "id": "kic-5",
+    "name": "구월테크노파크 지식산업센터 1-4",
+    "roadAddress": "인천광역시 남동구 구월동 1550-4번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 16653.74,
+    "buildingArea": 11796.65,
+    "coord": [
+      126.70960317584033,
+      37.4390578790969
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820010100115500004"
+  },
+  {
+    "id": "kic-6",
+    "name": "디딤아파트형공장",
+    "roadAddress": "인천광역시 남동구 논현동 642-4번지",
+    "jibunAddress": "임대",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 4065.8,
+    "buildingArea": 3437.63,
+    "coord": [
+      126.7114227183504,
+      37.399831486038266
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820011000106420004"
+  },
+  {
+    "id": "kic-7",
+    "name": "에스엠피 아파트형공장",
+    "roadAddress": "인천광역시 남동구 논현동 642-5번지 외 1필지",
+    "jibunAddress": "임대",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 1998.78,
+    "buildingArea": 1766.32,
+    "coord": [
+      126.71164334909408,
+      37.39967163706754
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820011000106420005"
+  },
+  {
+    "id": "kic-8",
+    "name": "오성미디컴 지식산업센터",
+    "roadAddress": "인천광역시 남동구 논현동 642-6번지 씨엔플러스 지식산업센터",
+    "jibunAddress": "임대",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 9913.78,
+    "buildingArea": 6848.82,
+    "coord": [
+      126.71229881949697,
+      37.39945126448366
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820011000106420006"
+  },
+  {
+    "id": "kic-9",
+    "name": "창안 지식산업센터",
+    "roadAddress": "인천광역시 남동구 논현동 642-7번지",
+    "jibunAddress": "분양/임대",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 1780.34,
+    "buildingArea": 1363.52,
+    "coord": [
+      126.71310448962595,
+      37.39941076162688
+    ],
+    "sigName": "남동구",
+    "complexName": "인천광역시 남동구",
+    "pnu": "2820011000106420007"
+  },
+  {
+    "id": "kic-10",
+    "name": "GT 센트럴남동 지식산업센터",
+    "roadAddress": "인천광역시 남동구 남동대로 37 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 710-3",
+    "status": "신설승인",
+    "saleType": "분양",
+    "landArea": 9899.5,
+    "buildingArea": 71155.7,
+    "coord": [
+      126.68742116868653,
+      37.38976281355557
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100107130000"
+  },
+  {
+    "id": "kic-11",
+    "name": "J&K지식산업센터",
+    "roadAddress": "인천광역시 남동구 은봉로75번길 84, 22B2L (논현동)",
+    "jibunAddress": "인천광역시 남동구 논현동 433 22B2L",
+    "status": "신설승인",
+    "saleType": "분양/임대",
+    "landArea": 3441.9,
+    "buildingArea": 23770.06,
+    "coord": null,
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지"
+  },
+  {
+    "id": "kic-12",
+    "name": "JK루체스타",
+    "roadAddress": "인천광역시 남동구 남동대로 353 (남촌동) JK루체스타",
+    "jibunAddress": "인천광역시 남동구 남촌동 624-3 JK루체스타",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 4367.3,
+    "buildingArea": 29364.09,
+    "coord": [
+      126.70480519325444,
+      37.41527948649742
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820010700106240003"
+  },
+  {
+    "id": "kic-13",
+    "name": "NIC지식산업센터",
+    "roadAddress": "인천광역시 남동구 은봉로 52 (논현동) NIC지식산업센터 25블럭 4로트",
+    "jibunAddress": "인천광역시 남동구 논현동 446-3 NIC지식산업센터",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 3898.5,
+    "buildingArea": 33743.26,
+    "coord": [
+      126.69743840086079,
+      37.41065884234589
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011000104460003"
+  },
+  {
+    "id": "kic-14",
+    "name": "금호오션타워",
+    "roadAddress": "인천광역시 남동구 능허대로 583 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 705-15번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 6308,
+    "buildingArea": 48568.783,
+    "coord": [
+      126.6781302217754,
+      37.39383338174495
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100107050015"
+  },
+  {
+    "id": "kic-15",
+    "name": "남동 SD타워",
+    "roadAddress": "인천광역시 남동구 은봉로 55 (논현동)",
+    "jibunAddress": "인천광역시 남동구 논현동 429-10번지",
+    "status": "신설승인",
+    "saleType": "건축완료",
+    "landArea": 3300.7,
+    "buildingArea": 22003.76,
+    "coord": [
+      126.69804054468231,
+      37.411310224506146
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011000104290010"
+  },
+  {
+    "id": "kic-16",
+    "name": "남동bt센터3차",
+    "roadAddress": "인천광역시 남동구 남동서로 168(고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 627-7",
+    "status": "신설승인",
+    "saleType": "도시지역",
+    "landArea": 3607.9,
+    "buildingArea": 24686.52,
+    "coord": [
+      126.69084292241914,
+      37.40502083355811
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106270007"
+  },
+  {
+    "id": "kic-17",
+    "name": "남동산단케이원",
+    "roadAddress": "인천광역시 남동구 비류대로 622  (남촌동)",
+    "jibunAddress": "인천광역시 남동구 남촌동 618-9",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 6886.3,
+    "buildingArea": 54702.2,
+    "coord": [
+      126.70377283309404,
+      37.4223005379497
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820010700106180009"
+  },
+  {
+    "id": "kic-18",
+    "name": "남동시범공단",
+    "roadAddress": "인천광역시 남동구 함박뫼로 396, 45블록 6로트 (논현동, 남동 아파트형 공장)",
+    "jibunAddress": "인천광역시 남동구 논현동 435-6번지 남동 아파트형 공장 45블록 6로트",
+    "status": "완료신고",
+    "saleType": "분양",
+    "coord": [
+      126.70667721216948,
+      37.41070953218664
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011000104350006"
+  },
+  {
+    "id": "kic-19",
+    "name": "남동아파트형임대공장",
+    "roadAddress": "인천광역시 남동구 남동동로 84, 151블럭 6로트 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 722번지",
+    "status": "완료신고",
+    "saleType": "임대",
+    "landArea": 25986,
+    "buildingArea": 36252,
+    "coord": [
+      126.69674760302082,
+      37.39277698158613
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100107220000"
+  },
+  {
+    "id": "kic-20",
+    "name": "남동우리타운",
+    "roadAddress": "인천광역시 남동구 남동서로53번길 38,  117블럭 9로트 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동  686-7번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 9734.2,
+    "buildingArea": 17680.75,
+    "coord": [
+      126.68228611642887,
+      37.39785594305776
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106860007"
+  },
+  {
+    "id": "kic-21",
+    "name": "남동테크노타워",
+    "roadAddress": "인천광역시 남동구 호구포로 189 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 648-1번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 5055.6,
+    "buildingArea": 39881.13,
+    "coord": [
+      126.70770674373198,
+      37.40049834443942
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106480001"
+  },
+  {
+    "id": "kic-22",
+    "name": "남동테크노파크",
+    "roadAddress": "인천광역시 남동구 은봉로 51,  21블럭 13로트 (논현동)",
+    "jibunAddress": "인천광역시 남동구 논현동  429-11번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 7925.5,
+    "buildingArea": 24722.15,
+    "coord": [
+      126.69735982013425,
+      37.411726867454156
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011000104290011"
+  },
+  {
+    "id": "kic-23",
+    "name": "대주지식산업센터",
+    "roadAddress": "인천광역시 남동구 함박뫼로 395 (남촌동)",
+    "jibunAddress": "인천광역시 남동구 남촌동 629-3번지",
+    "status": "완료신고",
+    "saleType": "임대",
+    "landArea": 5028.5,
+    "buildingArea": 13941.16,
+    "coord": [
+      126.70721098080304,
+      37.411367082237064
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820010700106290003"
+  },
+  {
+    "id": "kic-24",
+    "name": "더마크원",
+    "roadAddress": "인천광역시 남동구 호구포로 194 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 649-3",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 11924,
+    "buildingArea": 87747.62,
+    "coord": [
+      126.70864655913202,
+      37.399563692565074
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106490003"
+  },
+  {
+    "id": "kic-25",
+    "name": "디에스솔텍(주)",
+    "roadAddress": "인천광역시 남동구 앵고개로 442 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 690-16번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 5951,
+    "buildingArea": 28590.04,
+    "coord": [
+      126.68913997455937,
+      37.39791177473291
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106900016"
+  },
+  {
+    "id": "kic-26",
+    "name": "록키지식산업센터",
+    "roadAddress": "인천광역시 남동구 남동서로 361-8",
+    "jibunAddress": "인천광역시 남동구 남촌동 618-8",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 3315.8,
+    "buildingArea": 22901.7,
+    "coord": [
+      126.70159225548565,
+      37.419877129538925
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820010700106190002"
+  },
+  {
+    "id": "kic-27",
+    "name": "성강종합건설(주)",
+    "roadAddress": "인천광역시 남동구 아암대로 1223, 168블럭 27로트 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동  732-20번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 6560.6,
+    "buildingArea": 28247.07,
+    "coord": [
+      126.70420984137674,
+      37.3847147358941
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100107320020"
+  },
+  {
+    "id": "kic-28",
+    "name": "엘아이 지식산업센터",
+    "roadAddress": "인천광역시 남동구 호구포로 50, 엘아이지식산업센터 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 736-4번지 엘아이지식산업센터",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 9923.8,
+    "buildingArea": 66698.53,
+    "coord": [
+      126.70067509417834,
+      37.388954331939466
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100107360004"
+  },
+  {
+    "id": "kic-29",
+    "name": "청류지산",
+    "roadAddress": "인천광역시 남동구 호구포로 139, 98블럭 4로트 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 662-3번지 98블럭 4로트",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 6601.1,
+    "buildingArea": 49771.88,
+    "coord": [
+      126.7045922862376,
+      37.39667316127543
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106620003"
+  },
+  {
+    "id": "kic-30",
+    "name": "현대프리미어캠퍼스 호구포역",
+    "roadAddress": "인천광역시 남동구 청능대로 451(고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 649",
+    "status": "신설승인",
+    "saleType": "도시지역",
+    "landArea": 11591.3,
+    "buildingArea": 116412.56,
+    "coord": [
+      126.70959676673716,
+      37.39943053799448
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106490000"
+  },
+  {
+    "id": "kic-31",
+    "name": "형제전기 지식산업센터",
+    "roadAddress": "인천광역시 남동구 남동대로 150 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 672번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 3305.5,
+    "buildingArea": 26647.58,
+    "coord": [
+      126.69405531726778,
+      37.399073350188814
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106720000"
+  },
+  {
+    "id": "kic-32",
+    "name": "후이즈스마트타워",
+    "roadAddress": "인천광역시 남동구 호구포로 183 (고잔동)",
+    "jibunAddress": "인천광역시 남동구 고잔동 648-2번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 4520.1,
+    "buildingArea": 35939.67,
+    "coord": [
+      126.70724821921175,
+      37.400124098803104
+    ],
+    "sigName": "남동구",
+    "complexName": "남동국가산업단지",
+    "pnu": "2820011100106480002"
+  },
+  {
+    "id": "kic-33",
+    "name": "(주)주안시범공단",
+    "roadAddress": "인천광역시 미추홀구 주안동  17-1번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 45703.56,
+    "buildingArea": 42204.06,
+    "coord": [
+      126.6846478,
+      37.4707773
+    ],
+    "sigName": "미추홀구",
+    "complexName": "인천광역시 미추홀구",
+    "pnu": "2817710500100170001"
+  },
+  {
+    "id": "kic-34",
+    "name": "주안 제이원플렉스",
+    "roadAddress": "인천광역시 미추홀구 주염로73번길 60 (주안동)",
+    "jibunAddress": "인천광역시 미추홀구 주안동 3-26번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 4675.2,
+    "buildingArea": 31093.197,
+    "coord": [
+      126.6812995,
+      37.4716512
+    ],
+    "sigName": "미추홀구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2817710500114020013"
+  },
+  {
+    "id": "kic-35",
+    "name": "주안 제이타워",
+    "roadAddress": "인천광역시 미추홀구 염전로 330,  주안J타워 1차 지식산업센터(주안동 5-2, 5-4) (주안동)",
+    "jibunAddress": "인천광역시 미추홀구 주안동 5-2번지 주안J타워 1차 지식산업센터(주안동 5-2, 5-4)",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 5182.1,
+    "buildingArea": 11037.432,
+    "coord": [
+      126.6767353,
+      37.4704289
+    ],
+    "sigName": "미추홀구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2817710500100050002"
+  },
+  {
+    "id": "kic-36",
+    "name": "주안 제이타워  2차",
+    "roadAddress": "인천광역시 미추홀구 방축로 312, 주안제이타워2차 지식산업센터 (주안동)",
+    "jibunAddress": "인천광역시 미추홀구 주안동 1385-10번지 주안제이타워2차 지식산업센터",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 8077.4,
+    "buildingArea": 61266.974,
+    "coord": [
+      126.677486,
+      37.4744015
+    ],
+    "sigName": "미추홀구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2817710500113850010"
+  },
+  {
+    "id": "kic-37",
+    "name": "제이씨전산",
+    "roadAddress": "인천광역시 미추홀구 방축로 216 (도화동)",
+    "jibunAddress": "인천광역시 미추홀구 도화동 763-3번지 제이씨 전산",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "coord": [
+      126.6674932,
+      37.4779556
+    ],
+    "sigName": "미추홀구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2817710400107630003"
+  },
+  {
+    "id": "kic-38",
+    "name": "테크노텔",
+    "roadAddress": "인천광역시 미추홀구 봉수대로 17 (도화동)",
+    "jibunAddress": "인천광역시 미추홀구 도화동 969번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 3177.4,
+    "buildingArea": 13025.52,
+    "coord": [
+      126.6535788,
+      37.47994
+    ],
+    "sigName": "미추홀구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2817710400109690000"
+  },
+  {
+    "id": "kic-39",
+    "name": "인천테크노밸리유1센터",
+    "roadAddress": "인천광역시 부평구 갈산동 94",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 281713.42,
+    "buildingArea": 223520.69,
+    "coord": [
+      126.7273131,
+      37.5153364
+    ],
+    "sigName": "부평구",
+    "complexName": "인천광역시 부평구",
+    "pnu": "2823710600100940000"
+  },
+  {
+    "id": "kic-40",
+    "name": "(주)우림",
+    "roadAddress": "인천광역시 부평구 부평대로 283 (청천동, 부평 우림라이온스밸리) 외 7필지",
+    "jibunAddress": "인천광역시 부평구 청천2동 425번지 외 7필지",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "buildingArea": 130716.53,
+    "coord": [
+      126.720078,
+      37.5178208
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104250000"
+  },
+  {
+    "id": "kic-41",
+    "name": "(주)하나도시개발 남광센트렉스",
+    "roadAddress": "인천광역시 부평구 부평대로 301 (청천동, 남광센트렉스) 외 10필지",
+    "jibunAddress": "인천광역시 부평구 청천동 440-4번지 외 10필지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "buildingArea": 86173.98,
+    "coord": [
+      126.7208225,
+      37.5188242
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104400004"
+  },
+  {
+    "id": "kic-42",
+    "name": "경인센타",
+    "roadAddress": "인천광역시 부평구 백범로577번길 20 (십정동, 경인센타)",
+    "jibunAddress": "인천광역시 부평구 십정동  561-3번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 12375.3,
+    "buildingArea": 51248.84,
+    "coord": [
+      126.6891533,
+      37.4746512
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2823710200105620003"
+  },
+  {
+    "id": "kic-43",
+    "name": "부평테크노타워",
+    "roadAddress": "인천광역시 부평구 새벌로 29, 부평테크노타워 (청천동)",
+    "jibunAddress": "인천광역시 부평구 청천동 419-2번지 부평테크노타워",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 5765.9,
+    "buildingArea": 40050.11,
+    "coord": [
+      126.7153878,
+      37.5194883
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104190002"
+  },
+  {
+    "id": "kic-44",
+    "name": "부평테크노파크 M2",
+    "roadAddress": "인천광역시 부평구 평천로255번길 13",
+    "jibunAddress": "인천광역시 부평구 청천동 424-9",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 4810,
+    "buildingArea": 38792.17,
+    "coord": [
+      126.7184175,
+      37.5171067
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104240009"
+  },
+  {
+    "id": "kic-45",
+    "name": "부평테크노파크 M3",
+    "roadAddress": "인천광역시 부평구 새벌로 4(청천동)",
+    "jibunAddress": "인천광역시 부평구 청천동 424",
+    "status": "신설승인",
+    "saleType": "미착공",
+    "landArea": 8713,
+    "buildingArea": 70525.15,
+    "coord": [
+      126.7161572,
+      37.5171051
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104240000"
+  },
+  {
+    "id": "kic-46",
+    "name": "부평테크시티",
+    "roadAddress": "인천광역시 부평구 부평대로 293(청천동, 부평테크시티)",
+    "jibunAddress": "인천광역시 부평구 청천동 425-4 부평테크시티",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 4700,
+    "buildingArea": 36962.228,
+    "coord": [
+      126.720946,
+      37.5176904
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104250004"
+  },
+  {
+    "id": "kic-47",
+    "name": "와이드크릭제10호일반사모부동산투자회사",
+    "roadAddress": "인천광역시 부평구 안남로418번길 27(청천동)",
+    "jibunAddress": "인천광역시 부평구 청천동 414-2",
+    "status": "신설승인",
+    "saleType": "임대",
+    "landArea": 10969,
+    "buildingArea": 57306.92,
+    "coord": null,
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지"
+  },
+  {
+    "id": "kic-48",
+    "name": "제이타워 3차",
+    "roadAddress": "인천광역시 부평구 부평대로 337(청천동)",
+    "jibunAddress": "인천광역시 부평구 청천동 426-1",
+    "status": "신설승인",
+    "saleType": "건축중",
+    "landArea": 15788,
+    "buildingArea": 114100.27,
+    "coord": [
+      126.721211,
+      37.521662
+    ],
+    "sigName": "부평구",
+    "complexName": "한국수출산업(부평)국가산업단지",
+    "pnu": "2823710400104260001"
+  },
+  {
+    "id": "kic-49",
+    "name": "가좌IC지식산업센터",
+    "roadAddress": "인천광역시 서구 가좌동 585-20번지 가좌I.C APT형 공장",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 4621.1,
+    "buildingArea": 4278.15,
+    "coord": [
+      126.6674036,
+      37.4875152
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011200105850020"
+  },
+  {
+    "id": "kic-50",
+    "name": "가좌타워 지식산업센터",
+    "roadAddress": "인천광역시 서구 가좌동 482-1번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 23184.671,
+    "buildingArea": 8182.414,
+    "coord": [
+      126.6865665,
+      37.4790623
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011200104820001"
+  },
+  {
+    "id": "kic-51",
+    "name": "광양프런티어밸리 3차",
+    "roadAddress": "인천광역시 서구 가좌동 274-1번지 외 5필지",
+    "jibunAddress": "분양/임대",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 69840.26,
+    "buildingArea": 25319.29,
+    "coord": [
+      126.6759725,
+      37.4873256
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011200102740001"
+  },
+  {
+    "id": "kic-52",
+    "name": "금하산업",
+    "roadAddress": "인천광역시 서구 석남동 650-63번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 4953,
+    "buildingArea": 4558,
+    "coord": [
+      126.6512281,
+      37.5004198
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011000106500063"
+  },
+  {
+    "id": "kic-53",
+    "name": "대덕테크노타운",
+    "roadAddress": "분양",
+    "jibunAddress": "건축완료",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 6558,
+    "buildingArea": 2143.15,
+    "coord": null,
+    "sigName": "서구",
+    "complexName": "인천광역시 서구"
+  },
+  {
+    "id": "kic-54",
+    "name": "인천PCB협동화사업장",
+    "roadAddress": "인천광역시 서구 가좌동 602-33번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 7274,
+    "buildingArea": 6416,
+    "coord": [
+      126.6515137,
+      37.4971817
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011200106020033"
+  },
+  {
+    "id": "kic-55",
+    "name": "인천테크피아",
+    "roadAddress": "인천광역시 서구 석남동  223-38번지",
+    "jibunAddress": "건축완료",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 52060.49,
+    "buildingArea": 28131.5,
+    "coord": [
+      126.6639947,
+      37.5044946
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011000102230038"
+  },
+  {
+    "id": "kic-56",
+    "name": "현광아파트형공장",
+    "roadAddress": "인천광역시 서구 가좌동 178-78번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 28668,
+    "buildingArea": 24933,
+    "coord": [
+      126.6599226,
+      37.4883216
+    ],
+    "sigName": "서구",
+    "complexName": "인천광역시 서구",
+    "pnu": "2826011200101780078"
+  },
+  {
+    "id": "kic-57",
+    "name": "스마트테크노타워",
+    "roadAddress": "인천광역시 서구 백범로 681 (가좌동) 스마트테크노타워",
+    "jibunAddress": "인천광역시 서구 가좌동 541-1 스마트테크노타워",
+    "status": "완료신고",
+    "saleType": "분양",
+    "buildingArea": 39409.03,
+    "coord": [
+      126.6805577,
+      37.4807079
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105410001"
+  },
+  {
+    "id": "kic-58",
+    "name": "아르테크주안",
+    "roadAddress": "인천광역시 서구 백범로 611 (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 524-11",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 6110.1,
+    "buildingArea": 46245.11,
+    "coord": [
+      126.6861292,
+      37.4763473
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105240011"
+  },
+  {
+    "id": "kic-59",
+    "name": "엠앤제이비즈타워",
+    "roadAddress": "인천광역시 서구 백범로 619 (가좌동) 앰엔제이비즈타워",
+    "jibunAddress": "인천광역시 서구 가좌동 524-12",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 4958.5,
+    "buildingArea": 36533.709,
+    "coord": [
+      126.6856766,
+      37.4766639
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105240012"
+  },
+  {
+    "id": "kic-60",
+    "name": "인천 뷰티코스메틱센터",
+    "roadAddress": "인천광역시 서구 가좌로29번길 22",
+    "jibunAddress": "인천광역시 서구 가좌동 539-15번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 3306,
+    "buildingArea": 14185.01,
+    "coord": [
+      126.6789578,
+      37.478135
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105390015"
+  },
+  {
+    "id": "kic-61",
+    "name": "주안 BT센터 2차",
+    "roadAddress": "인천광역시 서구 가좌로 54 (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 530-3번지",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 3312.3,
+    "buildingArea": 14530.6,
+    "coord": [
+      126.6823366,
+      37.4780602
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105300003"
+  },
+  {
+    "id": "kic-62",
+    "name": "주안 뷰티&테크노센터",
+    "roadAddress": "인천광역시 서구 가좌로29번길 14",
+    "jibunAddress": "인천광역시 서구 가좌동 539-16번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 3332.7,
+    "buildingArea": 9206.3,
+    "coord": [
+      126.6795464,
+      37.4779888
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105390016"
+  },
+  {
+    "id": "kic-63",
+    "name": "주안DH비즈타워",
+    "roadAddress": "인천광역시 서구 가재울로 109",
+    "jibunAddress": "인천광역시 서구 가좌동 524-8번지",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 4709.5,
+    "buildingArea": 34804.28,
+    "coord": [
+      126.6844497,
+      37.4766102
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105240008"
+  },
+  {
+    "id": "kic-64",
+    "name": "주안dh비즈타워2차",
+    "roadAddress": "인천광역시 서구 가좌동 524-9번지",
+    "jibunAddress": "인천광역시 서구 가좌동 524-9번지",
+    "status": "신설승인",
+    "saleType": "분양/임대",
+    "landArea": 4270,
+    "buildingArea": 36927.64,
+    "coord": [
+      126.6850097,
+      37.4762137
+    ],
+    "sigName": "서구",
+    "complexName": "한국수출산업(주안)국가산업단지",
+    "pnu": "2826011200105240009"
+  },
+  {
+    "id": "kic-65",
+    "name": "에이스하이테크시티청라",
+    "roadAddress": "인천광역시 서구 파랑로 495",
+    "jibunAddress": "인천광역시 서구 청라동 202-5번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 15786.5,
+    "buildingArea": 106190.52,
+    "coord": [
+      126.6503361,
+      37.5245217
+    ],
+    "sigName": "서구",
+    "complexName": "IHP도시첨단산업단지",
+    "pnu": "2826012200102020005"
+  },
+  {
+    "id": "kic-66",
+    "name": "청라 SK V1",
+    "roadAddress": "미착공",
+    "jibunAddress": "도시지역",
+    "status": "신설승인",
+    "saleType": "공업지역",
+    "landArea": 126022.25,
+    "buildingArea": 58809.22,
+    "coord": null,
+    "sigName": "서구",
+    "complexName": "IHP도시첨단산업단지"
+  },
+  {
+    "id": "kic-67",
+    "name": "청라지식산업센터(청라더리브티아모)",
+    "roadAddress": "인천광역시 서구 중봉대로 490  (청라동)",
+    "jibunAddress": "인천광역시 서구 청라동 202-3",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 16322.8,
+    "buildingArea": 108998.63,
+    "coord": [
+      126.6504696,
+      37.5228433
+    ],
+    "sigName": "서구",
+    "complexName": "IHP도시첨단산업단지",
+    "pnu": "2826012200102020003"
+  },
+  {
+    "id": "kic-68",
+    "name": "(주)가좌써키트",
+    "roadAddress": "인천광역시 서구 가정로47번길 4 (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 576번지",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 5767,
+    "buildingArea": 7917,
+    "coord": [
+      126.670869,
+      37.4890727
+    ],
+    "sigName": "서구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2826011200105760000"
+  },
+  {
+    "id": "kic-69",
+    "name": "(주)빌립보",
+    "roadAddress": "인천광역시 서구 장고개로 125 (가좌동, 1)",
+    "jibunAddress": "인천광역시 서구 가좌동 180-102번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 7800,
+    "buildingArea": 16309.56,
+    "coord": [
+      126.6707458,
+      37.4788183
+    ],
+    "sigName": "서구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2826011200101800102"
+  },
+  {
+    "id": "kic-70",
+    "name": "검단지식산업센터",
+    "roadAddress": "인천광역시 서구 보듬로 158 (오류동)",
+    "jibunAddress": "인천광역시 서구 오류동 1656-1번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 26441.9,
+    "buildingArea": 153155.25,
+    "coord": [
+      126.6148993,
+      37.5958671
+    ],
+    "sigName": "서구",
+    "complexName": "뷰티풀파크",
+    "pnu": "2826011900116560001"
+  },
+  {
+    "id": "kic-71",
+    "name": "영창테크노타운",
+    "roadAddress": "인천광역시 서구 가정로38번길 18, 영창테크노타운 (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 564-11번지 영창테크노타운",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 11629.9,
+    "buildingArea": 15934.59,
+    "coord": [
+      126.6737134,
+      37.4875509
+    ],
+    "sigName": "서구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2826011200105640011"
+  },
+  {
+    "id": "kic-72",
+    "name": "청정표면처리센터",
+    "roadAddress": "인천광역시 서구 가람로 14 (오류동)",
+    "jibunAddress": "인천광역시 서구 오류동 1610-1번지",
+    "status": "완료신고",
+    "saleType": "분양",
+    "landArea": 23146.9,
+    "buildingArea": 129123.59,
+    "coord": [
+      126.5982373,
+      37.587601
+    ],
+    "sigName": "서구",
+    "complexName": "뷰티풀파크",
+    "pnu": "2826011900116100001"
+  },
+  {
+    "id": "kic-73",
+    "name": "토지산업지식산업센터(2차)",
+    "roadAddress": "인천광역시 서구 가남로 61, 토지산업 지식산업센터(2차) (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 564-13번지 토지산업 지식산업센터(2차)",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "landArea": 10694.2,
+    "buildingArea": 19954.04,
+    "coord": [
+      126.6734875,
+      37.4870634
+    ],
+    "sigName": "서구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2826011200105640013"
+  },
+  {
+    "id": "kic-74",
+    "name": "팩토리80",
+    "roadAddress": "인천광역시 서구, 가정로37번길 4 (가좌동)",
+    "jibunAddress": "인천광역시 서구 가좌동 578-12번지 가정로37번길 4",
+    "status": "완료신고",
+    "saleType": "분양/임대",
+    "coord": [
+      126.6709071,
+      37.4887678
+    ],
+    "sigName": "서구",
+    "complexName": "인천일반산업단지",
+    "pnu": "2826011200105780001"
+  },
+  {
+    "id": "kic-75",
+    "name": "송도 AIT센터",
+    "roadAddress": "분양",
+    "jibunAddress": "미착공",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 28208.13,
+    "buildingArea": 12034.3,
+    "coord": null,
+    "sigName": "연수구",
+    "complexName": "인천광역시 경제자유구역청"
+  },
+  {
+    "id": "kic-76",
+    "name": "송도건원테크노큐브",
+    "roadAddress": "인천광역시 연수구 송도동 174-1번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 12515.519,
+    "buildingArea": 12515.519,
+    "coord": [
+      126.6608209,
+      37.3810578
+    ],
+    "sigName": "연수구",
+    "complexName": "인천광역시 경제자유구역청",
+    "pnu": "2818510600101740001"
+  },
+  {
+    "id": "kic-77",
+    "name": "송도비알씨스마트밸리지식산업센터",
+    "roadAddress": "인천광역시 연수구 송도동 214번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "미착공",
+    "landArea": 291184.06,
+    "buildingArea": 178362.48,
+    "coord": [
+      126.6483774,
+      37.3666489
+    ],
+    "sigName": "연수구",
+    "complexName": "인천광역시 경제자유구역청",
+    "pnu": "2818510600102140000"
+  },
+  {
+    "id": "kic-78",
+    "name": "송도테크노파크BT센터",
+    "roadAddress": "인천광역시 연수구 송도동 172-3번지",
+    "jibunAddress": "분양",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 32869.21,
+    "buildingArea": 12502.1,
+    "coord": [
+      126.6641196,
+      37.3810741
+    ],
+    "sigName": "연수구",
+    "complexName": "인천광역시 경제자유구역청",
+    "pnu": "2818510600101720003"
+  },
+  {
+    "id": "kic-79",
+    "name": "인천테크노파크 AT센터",
+    "roadAddress": "인천광역시 연수구 송도동 172-5 동 층 호",
+    "jibunAddress": "분양/임대",
+    "status": "완료신고",
+    "saleType": "건축완료",
+    "landArea": 31341.67,
+    "buildingArea": 31341.67,
+    "coord": [
+      126.6651876,
+      37.3804997
+    ],
+    "sigName": "연수구",
+    "complexName": "인천광역시 경제자유구역청",
+    "pnu": "2818510600101720005"
+  },
+  {
+    "id": "kic-80",
+    "name": "본에스티스 지식산업센터",
+    "roadAddress": "인천광역시 연수구 송도동 10-77",
+    "jibunAddress": "미착공",
+    "status": "신설승인",
+    "saleType": "도시지역",
+    "landArea": 6635.4,
+    "buildingArea": 22415.03,
+    "coord": [
+      126.6377146,
+      37.3772169
+    ],
+    "sigName": "연수구",
+    "complexName": "송도지식정보일반산업단지",
+    "pnu": "2818510600100100077"
+  },
+  {
+    "id": "kic-81",
+    "name": "인천 중구 항동7가 지식산업센터",
+    "roadAddress": "인천광역시 중구 항동7가 97",
+    "jibunAddress": "미착공",
+    "status": "완료신고",
+    "saleType": "도시지역",
+    "landArea": 145396.08,
+    "buildingArea": 57539.02,
+    "coord": [
+      126.6152837,
+      37.4522236
+    ],
+    "sigName": "중구",
+    "complexName": "인천광역시 중구",
+    "pnu": "2811011800100970000"
+  }
+]

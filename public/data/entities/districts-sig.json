@@ -1,0 +1,156 @@
+[
+  {
+    "id": "28185",
+    "code": "28185",
+    "name": "연수구",
+    "coord": [
+      126.64173079040299,
+      37.395935995677554
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28177",
+    "code": "28177",
+    "name": "미추홀구",
+    "coord": [
+      126.66993925556915,
+      37.457129576107356
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28110",
+    "code": "28110",
+    "name": "중구",
+    "coord": [
+      126.44054351413563,
+      37.46369686605888
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28140",
+    "code": "28140",
+    "name": "동구",
+    "coord": [
+      126.64552293210434,
+      37.48050320307964
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28200",
+    "code": "28200",
+    "name": "남동구",
+    "coord": [
+      126.73368977708746,
+      37.443144182384444
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28237",
+    "code": "28237",
+    "name": "부평구",
+    "coord": [
+      126.72035292738342,
+      37.5030463753573
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28245",
+    "code": "28245",
+    "name": "계양구",
+    "coord": [
+      126.7388540308821,
+      37.55646436647504
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28260",
+    "code": "28260",
+    "name": "서구",
+    "coord": [
+      126.64991199280747,
+      37.538876070218116
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28710",
+    "code": "28710",
+    "name": "강화군",
+    "coord": [
+      126.44719618671475,
+      37.73765994289173
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "28720",
+    "code": "28720",
+    "name": "옹진군",
+    "coord": [
+      124.67953447415465,
+      37.95298314008953
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  },
+  {
+    "id": "283전",
+    "code": "283전",
+    "name": "4122031024102830000",
+    "coord": [
+      127.10591278151013,
+      36.22344375667495
+    ],
+    "level": "sig",
+    "parcelCount": 0,
+    "listingCount": 0,
+    "auctionCount": 0,
+    "avgPrice": 0
+  }
+]
