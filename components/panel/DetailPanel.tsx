@@ -691,6 +691,107 @@ export default function DetailPanel() {
 
                                 <Divider />
 
+                                {/* 토지대장 정보 */}
+                                {selectedParcel.landLedger && (
+                                    <>
+                                        <Text size="sm" fw={600} c="dark">📋 토지대장</Text>
+                                        <SimpleGrid cols={2} spacing="xs">
+                                            <Paper p="sm" withBorder bg="blue.0">
+                                                <Text size="xs" c="dimmed">공부상 면적</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.landLedger.lndpclAr.toLocaleString()}㎡
+                                                </Text>
+                                                <Text size="xs" c="dimmed">
+                                                    ({(selectedParcel.landLedger.lndpclAr / 3.3058).toFixed(1)}평)
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="green.0">
+                                                <Text size="xs" c="dimmed">지목</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.landLedger.lndcgrCodeNm}
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="gray.0">
+                                                <Text size="xs" c="dimmed">소유구분</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.landLedger.posesnSeCodeNm}
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="gray.0">
+                                                <Text size="xs" c="dimmed">기준일자</Text>
+                                                <Text size="sm">
+                                                    {selectedParcel.landLedger.lastUpdtDt}
+                                                </Text>
+                                            </Paper>
+                                        </SimpleGrid>
+                                        <Divider />
+                                    </>
+                                )}
+
+                                {/* 건축물대장 정보 */}
+                                {selectedParcel.buildingLedger && (
+                                    <>
+                                        <Text size="sm" fw={600} c="dark">🏗️ 건축물대장</Text>
+                                        <SimpleGrid cols={2} spacing="xs">
+                                            <Paper p="sm" withBorder bg="orange.0">
+                                                <Text size="xs" c="dimmed">건축면적</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.archArea.toLocaleString()}㎡
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="orange.0">
+                                                <Text size="xs" c="dimmed">연면적</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.totArea.toLocaleString()}㎡
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="violet.0">
+                                                <Text size="xs" c="dimmed">주용도</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.mainPurpsCdNm}
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="gray.0">
+                                                <Text size="xs" c="dimmed">층수</Text>
+                                                <Text size="md" fw={600}>
+                                                    지상{selectedParcel.buildingLedger.grndFlrCnt}층
+                                                    {selectedParcel.buildingLedger.ugrndFlrCnt > 0 && ` / 지하${selectedParcel.buildingLedger.ugrndFlrCnt}층`}
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="teal.0">
+                                                <Text size="xs" c="dimmed">건폐율</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.bcRat.toFixed(1)}%
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="teal.0">
+                                                <Text size="xs" c="dimmed">용적률</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.vlRat.toFixed(1)}%
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="gray.0">
+                                                <Text size="xs" c="dimmed">구조</Text>
+                                                <Text size="sm" fw={500}>
+                                                    {selectedParcel.buildingLedger.strctCdNm}
+                                                </Text>
+                                            </Paper>
+                                            <Paper p="sm" withBorder bg="gray.0">
+                                                <Text size="xs" c="dimmed">높이</Text>
+                                                <Text size="md" fw={600}>
+                                                    {selectedParcel.buildingLedger.heit}m
+                                                </Text>
+                                            </Paper>
+                                        </SimpleGrid>
+                                        {selectedParcel.buildingLedger.useAprDay && (
+                                            <Text size="xs" c="dimmed" ta="right">
+                                                사용승인일: {selectedParcel.buildingLedger.useAprDay}
+                                            </Text>
+                                        )}
+                                        <Divider />
+                                    </>
+                                )}
+
                                 <div>
                                     <Text size="sm" c="dimmed" mb={4}>토지 면적</Text>
                                     <Group gap="xs" align="baseline">

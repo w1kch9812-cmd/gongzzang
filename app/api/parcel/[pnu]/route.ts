@@ -4,9 +4,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { ParcelDetail } from '@/types/data';
 import { DATA_PATHS } from '@/types/data';
-
-// R2 또는 로컬 파일 경로
-const R2_BASE_URL = process.env.NEXT_PUBLIC_R2_URL || '';
+import { getDataUrl, isR2Configured } from '@/lib/data/dataUrl';
 
 // 서버 사이드 PNU 맵 (한 번만 로드)
 let parcelMap: Map<string, any> | null = null;
@@ -21,9 +19,9 @@ async function getParcelMap(): Promise<Map<string, any>> {
     try {
         let data: any[];
 
-        if (R2_BASE_URL) {
-            // R2에서 JSON 로드 (새 경로: /data/entities/parcels.json)
-            const url = `${R2_BASE_URL}/data/entities/parcels.json`;
+        if (isR2Configured()) {
+            // R2에서 JSON 로드 (경로 매핑은 getDataUrl에서 처리)
+            const url = getDataUrl('/data/entities/parcels.json');
             console.log(`[API] Loading parcels from R2: ${url}`);
 
             const response = await fetch(url);
@@ -50,10 +48,11 @@ async function getParcelMap(): Promise<Map<string, any>> {
             console.log(`[API] 로컬 파일 로드 완료: ${data.length}개`);
         }
 
-        // PNU 맵 생성 (새 필드명: pnu)
+        // PNU 맵 생성 (pnu 또는 PNU 필드 지원 - R2 호환)
         parcelMap = new Map();
         for (const p of data) {
-            const pnuId = p.pnu;  // 새 필드명 사용
+            // 새 필드명(pnu) 또는 구 필드명(PNU/id) 사용
+            const pnuId = p.pnu || p.PNU || p.id;
             if (pnuId) {
                 parcelMap.set(pnuId, p);
             }

@@ -6,6 +6,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { logger } from '@/lib/utils/logger';
 import { ZOOM_EMD, ZOOM_PARCEL } from '@/lib/map/zoomConfig';
+import { getDataUrl } from '@/lib/data/dataUrl';
 
 interface FactoryDistributionLayerProps {
     map: naver.maps.Map | null;
@@ -19,17 +20,6 @@ const MIN_ZOOM = 6;
 const FADE_START_ZOOM = ZOOM_EMD.min;        // 12
 const FADE_END_ZOOM = ZOOM_PARCEL.min;       // 14
 
-// R2 CDN URL (환경변수, 없으면 로컬)
-const R2_BASE_URL = process.env.NEXT_PUBLIC_R2_URL || '';
-
-// 사전 계산된 등고선 폴리곤 URL (새 경로: /data/entities/)
-const getContoursUrl = () => {
-    if (R2_BASE_URL) {
-        return `${R2_BASE_URL}/data/entities/factory-contours.json`;
-    }
-    return '/data/entities/factory-contours.json';
-};
-
 export default function FactoryDistributionLayer({ map }: FactoryDistributionLayerProps) {
     const sourceAddedRef = useRef(false);
     const mapboxRef = useRef<any>(null);
@@ -37,7 +27,7 @@ export default function FactoryDistributionLayer({ map }: FactoryDistributionLay
 
     // GeoJSON 로드
     useEffect(() => {
-        fetch(getContoursUrl())
+        fetch(getDataUrl('/data/entities/factory-contours.json'))
             .then((res) => res.ok ? res.json() : null)
             .then((data) => {
                 if (data) {

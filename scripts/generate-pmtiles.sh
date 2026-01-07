@@ -14,9 +14,10 @@
 
 set -e
 
-WS_DIR="/mnt/e/gongzzang"
+# Windows 경로를 WSL에서 접근
+WS_DIR="/mnt/c/Users/admin/Desktop/gongzzang"
 TEMP_DIR="$WS_DIR/temp"
-TILES_DIR="$WS_DIR/public/tiles"
+TILES_DIR="$WS_DIR/public/data/geometry"
 
 echo "📦 PMTiles 생성 시작 (줌 레벨 최적화)..."
 echo "   임시폴더: $TEMP_DIR"
