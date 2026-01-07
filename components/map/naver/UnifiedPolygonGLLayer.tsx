@@ -998,6 +998,30 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
     const factoryMouseEnterRef = useRef<(() => void) | null>(null);
     const factoryMouseLeaveRef = useRef<(() => void) | null>(null);
 
+    // 공장 아이콘 등록 함수
+    const registerFactoryIcon = useCallback((mbMap: any) => {
+        if (mbMap.hasImage('factory-icon')) return Promise.resolve();
+
+        return new Promise<void>((resolve) => {
+            // 공장 아이콘 SVG (teal 색상)
+            const svgString = `
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#0D9488">
+                    <path d="M4 21V10l4 3V10l4 3V10l4 3V4h4v17H4z"/>
+                </svg>
+            `;
+
+            const img = new Image();
+            img.onload = () => {
+                if (!mbMap.hasImage('factory-icon')) {
+                    mbMap.addImage('factory-icon', img, { sdf: false });
+                }
+                resolve();
+            };
+            img.onerror = () => resolve(); // 에러 시에도 계속 진행
+            img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svgString);
+        });
+    }, []);
+
     useEffect(() => {
         if (!mapboxGLReady || !mapboxGLRef.current) return;
         const mbMap = mapboxGLRef.current;
@@ -1005,104 +1029,113 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         // 공장 데이터가 없으면 스킵
         if (factoryGeoJSON.features.length === 0) return;
 
-        try {
+        const setupFactoryLayer = async () => {
+            // 공장 아이콘 등록
+            await registerFactoryIcon(mbMap);
+
             // 소스 추가 또는 업데이트
             const existingSource = mbMap.getSource('factories') as any;
             if (existingSource) {
                 // 이미 존재하면 데이터만 업데이트
                 existingSource.setData(factoryGeoJSON);
-            } else {
-                // 새로 추가 (클러스터링 없음 - kepler.gl 스타일)
-                mbMap.addSource('factories', {
-                    type: 'geojson',
-                    data: factoryGeoJSON,
-                });
-
-                // 공장 점 - 줌 12부터 서서히 나타남 (그리드와 교차 전환)
-                mbMap.addLayer({
-                    id: 'factory-points',
-                    type: 'circle',
-                    source: 'factories',
-                    minzoom: ZOOM_EMD.min,  // 줌 12부터 시작
-                    paint: {
-                        'circle-color': '#0D9488',  // teal - 그리드 분포와 동일 색상
-                        'circle-radius': [
-                            'interpolate', ['linear'], ['zoom'],
-                            ZOOM_EMD.min, 1,         // 줌 12: 1px
-                            ZOOM_PARCEL.min, 3,      // 줌 14: 3px
-                            17, 5,
-                            20, 7,
-                        ],
-                        'circle-opacity': [
-                            'interpolate', ['linear'], ['zoom'],
-                            ZOOM_EMD.min, 0,           // 줌 12: 투명
-                            ZOOM_PARCEL.min, 0.7,      // 줌 14: 70%
-                        ],
-                        'circle-stroke-width': 0,
-                    },
-                });
-
-                // 공장 라벨 (줌 17+) - teal 색상
-                mbMap.addLayer({
-                    id: 'factory-labels',
-                    type: 'symbol',
-                    source: 'factories',
-                    minzoom: 17,
-                    layout: {
-                        'text-field': ['get', 'name'],
-                        'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
-                        'text-size': 9,
-                        'text-offset': [0, 0.8],
-                        'text-anchor': 'top',
-                        'text-max-width': 8,
-                        'text-allow-overlap': false,
-                        'text-optional': true,
-                    },
-                    paint: {
-                        'text-color': '#0D9488',  // teal - 공장 점과 동일
-                        'text-halo-color': '#ffffff',
-                        'text-halo-width': 1,
-                    },
-                });
-
-                // 공장 점 클릭 시 상세 정보 표시 (핸들러 저장)
-                factoryClickHandlerRef.current = (e: any) => {
-                    const features = mbMap.queryRenderedFeatures(e.point, { layers: ['factory-points'] });
-                    if (!features.length) return;
-
-                    const factoryId = features[0].properties.id;
-                    logger.log(`🏭 [Factory 클릭] id: ${factoryId}`);
-
-                    // 상세 정보 로드
-                    import('@/lib/data/loadData').then(({ loadFactoryDetail }) => {
-                        loadFactoryDetail(factoryId).then((detail) => {
-                            if (detail) {
-                                useSelectionStore.getState().setSelectedFactory(detail);
-                            }
-                        });
-                    });
-                };
-                mbMap.on('click', 'factory-points', factoryClickHandlerRef.current);
-
-                // 커서 변경 (핸들러 저장)
-                factoryMouseEnterRef.current = () => {
-                    mbMap.getCanvas().style.cursor = 'pointer';
-                };
-                factoryMouseLeaveRef.current = () => {
-                    mbMap.getCanvas().style.cursor = '';
-                };
-                mbMap.on('mouseenter', 'factory-points', factoryMouseEnterRef.current);
-                mbMap.on('mouseleave', 'factory-points', factoryMouseLeaveRef.current);
-
-                logger.log(`🏭 [Factory GL] 공장 점 레이어 추가 완료: ${factoryGeoJSON.features.length}개`);
+                return; // 레이어는 이미 있음
             }
+
+            // 새로 추가
+            mbMap.addSource('factories', {
+                type: 'geojson',
+                data: factoryGeoJSON,
+            });
+
+            // 공장 아이콘 레이어 - 줌 12부터 서서히 나타남
+            mbMap.addLayer({
+                id: 'factory-points',
+                type: 'symbol',
+                source: 'factories',
+                minzoom: ZOOM_EMD.min,  // 줌 12부터 시작
+                layout: {
+                    'icon-image': 'factory-icon',
+                    'icon-size': [
+                        'interpolate', ['linear'], ['zoom'],
+                        ZOOM_EMD.min, 0.3,       // 줌 12: 작게
+                        ZOOM_PARCEL.min, 0.5,    // 줌 14: 중간
+                        17, 0.7,
+                        20, 0.9,
+                    ],
+                    'icon-allow-overlap': true,
+                    'icon-ignore-placement': true,
+                },
+                paint: {
+                    'icon-opacity': [
+                        'interpolate', ['linear'], ['zoom'],
+                        ZOOM_EMD.min, 0,           // 줌 12: 투명
+                        ZOOM_PARCEL.min, 0.85,     // 줌 14: 85%
+                    ],
+                },
+            });
+
+            // 공장 라벨 (줌 17+) - teal 색상
+            mbMap.addLayer({
+                id: 'factory-labels',
+                type: 'symbol',
+                source: 'factories',
+                minzoom: 17,
+                layout: {
+                    'text-field': ['get', 'name'],
+                    'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
+                    'text-size': 9,
+                    'text-offset': [0, 1.2],
+                    'text-anchor': 'top',
+                    'text-max-width': 8,
+                    'text-allow-overlap': false,
+                    'text-optional': true,
+                },
+                paint: {
+                    'text-color': '#0D9488',  // teal - 공장 아이콘과 동일
+                    'text-halo-color': '#ffffff',
+                    'text-halo-width': 1,
+                },
+            });
+
+            // 공장 아이콘 클릭 시 상세 정보 표시 (핸들러 저장)
+            factoryClickHandlerRef.current = (e: any) => {
+                const features = mbMap.queryRenderedFeatures(e.point, { layers: ['factory-points'] });
+                if (!features.length) return;
+
+                const factoryId = features[0].properties.id;
+                logger.log(`🏭 [Factory 클릭] id: ${factoryId}`);
+
+                // 상세 정보 로드
+                import('@/lib/data/loadData').then(({ loadFactoryDetail }) => {
+                    loadFactoryDetail(factoryId).then((detail) => {
+                        if (detail) {
+                            useSelectionStore.getState().setSelectedFactory(detail);
+                        }
+                    });
+                });
+            };
+            mbMap.on('click', 'factory-points', factoryClickHandlerRef.current);
+
+            // 커서 변경 (핸들러 저장)
+            factoryMouseEnterRef.current = () => {
+                mbMap.getCanvas().style.cursor = 'pointer';
+            };
+            factoryMouseLeaveRef.current = () => {
+                mbMap.getCanvas().style.cursor = '';
+            };
+            mbMap.on('mouseenter', 'factory-points', factoryMouseEnterRef.current);
+            mbMap.on('mouseleave', 'factory-points', factoryMouseLeaveRef.current);
+
+            logger.log(`🏭 [Factory GL] 공장 아이콘 레이어 추가 완료: ${factoryGeoJSON.features.length}개`);
 
             // 가시성 적용
             const isVisible = useUIStore.getState().visibleLayers.has('factory');
             setLayerVisibility(mbMap, ['factory-points', 'factory-labels'], isVisible);
-        } catch (e) {
+        };
+
+        setupFactoryLayer().catch((e) => {
             logger.warn('공장 레이어 업데이트 실패:', e);
-        }
+        });
 
         // Cleanup: 이벤트 리스너 제거
         return () => {
