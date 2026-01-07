@@ -20,6 +20,7 @@ import {
 import { logger } from '@/lib/utils/logger';
 import type { LayerType } from '@/types/data';
 import { Protocol } from 'pmtiles';
+import { ENTITY_COLORS } from '@/lib/constants';
 
 // R2 CDN URL (환경변수, 없으면 로컬 API 사용)
 const R2_BASE_URL = process.env.NEXT_PUBLIC_R2_URL || '';
@@ -1003,9 +1004,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         if (mbMap.hasImage('factory-icon')) return Promise.resolve();
 
         return new Promise<void>((resolve) => {
-            // 공장 아이콘 SVG (teal 색상)
+            // 공장 아이콘 SVG
             const svgString = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="#0D9488">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${ENTITY_COLORS.factory}">
                     <path d="M4 21V10l4 3V10l4 3V10l4 3V4h4v17H4z"/>
                 </svg>
             `;
@@ -1091,7 +1092,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     'text-optional': true,
                 },
                 paint: {
-                    'text-color': '#0D9488',  // teal - 공장 아이콘과 동일
+                    'text-color': ENTITY_COLORS.factory,
                     'text-halo-color': '#ffffff',
                     'text-halo-width': 1,
                 },

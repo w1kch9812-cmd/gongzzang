@@ -6,6 +6,7 @@
 import { useEffect, useRef, useMemo } from 'react';
 import { useMapStore, type OverlappingTxMarker } from '@/lib/stores/map-store';
 import { logger } from '@/lib/utils/logger';
+import { ENTITY_COLORS } from '@/lib/constants';
 
 interface TransactionDotsLayerProps {
     map: naver.maps.Map | null;
@@ -13,10 +14,10 @@ interface TransactionDotsLayerProps {
 
 // 매물 유형별 색상
 const PROPERTY_TYPE_COLORS: Record<string, string> = {
-    factory: '#0D9488',           // teal-600
-    'knowledge-center': '#7C3AED', // violet-600
-    warehouse: '#EA580C',          // orange-600
-    land: '#16A34A',              // green-600
+    factory: ENTITY_COLORS.factory,
+    'knowledge-center': ENTITY_COLORS.knowledgeCenter,
+    warehouse: ENTITY_COLORS.warehouse,
+    land: ENTITY_COLORS.land,
 };
 
 const DEFAULT_COLOR = '#64748B'; // slate-500

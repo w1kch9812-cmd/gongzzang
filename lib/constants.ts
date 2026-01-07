@@ -85,3 +85,17 @@ export const DEBOUNCE_MS = {
 // ===== 클러스터 줌 레벨 =====
 
 export const CLUSTER_MAX_ZOOM_GENERAL = 22;  // 일반 클러스터 최대 줌
+
+// ===== 엔티티 색상 (Single Source of Truth) =====
+
+export const ENTITY_COLORS = {
+    factory: '#0066FF',              // 공장 - 파랑
+    factoryGlow: 'rgba(0, 102, 255, 0.4)',  // 공장 그림자
+    knowledgeCenter: '#7C3AED',      // 지식산업센터 - 보라
+    warehouse: '#EA580C',            // 창고 - 주황
+    land: '#16A34A',                 // 토지 - 초록
+    complex: '#F97316',              // 산업단지 - 주황
+    listing: '#2563EB',              // 매물 - 파랑
+    auction: '#DC2626',              // 경매 - 빨강
+    transaction: '#059669',          // 실거래 - 에메랄드
+} as const;

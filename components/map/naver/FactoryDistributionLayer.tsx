@@ -7,13 +7,7 @@ import { useEffect, useRef, useState } from 'react';
 import { logger } from '@/lib/utils/logger';
 import { ZOOM_EMD, ZOOM_PARCEL } from '@/lib/map/zoomConfig';
 import { getDataUrl } from '@/lib/data/dataUrl';
-
-interface FactoryDistributionLayerProps {
-    map: naver.maps.Map | null;
-}
-
-// 공장 색상 (teal)
-const FACTORY_COLOR = '#0D9488';
+import { ENTITY_COLORS } from '@/lib/constants';
 
 // 줌 레벨 설정
 const MIN_ZOOM = 6;
@@ -69,7 +63,7 @@ export default function FactoryDistributionLayer({ map }: FactoryDistributionLay
                     source: 'factory-zones',
                     minzoom: MIN_ZOOM,
                     paint: {
-                        'fill-color': FACTORY_COLOR,
+                        'fill-color': ENTITY_COLORS.factory,
                         'fill-opacity': [
                             'interpolate', ['linear'], ['zoom'],
                             FADE_START_ZOOM, 0.4,     // 줌 12: 40% (기존)
@@ -86,7 +80,7 @@ export default function FactoryDistributionLayer({ map }: FactoryDistributionLay
                     source: 'factory-zones',
                     minzoom: MIN_ZOOM,
                     paint: {
-                        'line-color': FACTORY_COLOR,
+                        'line-color': ENTITY_COLORS.factory,
                         'line-width': 1.5,
                         'line-opacity': [
                             'interpolate', ['linear'], ['zoom'],

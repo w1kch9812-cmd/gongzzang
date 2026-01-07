@@ -31,7 +31,7 @@ import { point as turfPoint, polygon as turfPolygon, multiPolygon as turfMultiPo
 import type { Feature, Polygon, MultiPolygon, GeoJsonProperties } from 'geojson';
 import { hasValidCoordinate } from '@/lib/utils/geoHelpers';
 import { getSamplingHash } from '@/lib/utils/hash';
-import { CLUSTER_RADIUS, CLUSTER_MAX_ZOOM_GENERAL, DEBOUNCE_MS } from '@/lib/constants';
+import { CLUSTER_RADIUS, CLUSTER_MAX_ZOOM_GENERAL, DEBOUNCE_MS, ENTITY_COLORS } from '@/lib/constants';
 
 interface UnifiedMarkerLayerProps {
     map: naver.maps.Map | null;
@@ -314,17 +314,17 @@ function createRegionClusterDOM(
 // 매물 유형별 색상 헬퍼
 function getPropertyTypeColor(type: string): string {
     const colors: Record<string, string> = {
-        factory: '#0D9488',
-        'knowledge-center': '#7C3AED',
-        warehouse: '#EA580C',
-        land: '#16A34A',
+        factory: ENTITY_COLORS.factory,
+        'knowledge-center': ENTITY_COLORS.knowledgeCenter,
+        warehouse: ENTITY_COLORS.warehouse,
+        land: ENTITY_COLORS.land,
     };
     return colors[type] || '#6B7280';
 }
 
 function getPropertyTypeBgColor(type: string): string {
     const colors: Record<string, string> = {
-        factory: '#F0FDFA',
+        factory: '#EFF6FF',           // blue-50 (파란색 계열)
         'knowledge-center': '#F5F3FF',
         warehouse: '#FFF7ED',
         land: '#F0FDF4',
@@ -416,25 +416,25 @@ function createPropertyClusterDOM(listingCount: number, auctionCount: number, pr
 const PROPERTY_TYPE_STYLES: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
     factory: {
         label: '공장',
-        color: '#0D9488',
-        bgColor: '#F0FDFA',
+        color: ENTITY_COLORS.factory,
+        bgColor: '#EFF6FF',  // blue-50
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20V8l6 4V8l6 4V4h8v16H2z"/></svg>`
     },
     'knowledge-center': {
         label: '지산',
-        color: '#7C3AED',
+        color: ENTITY_COLORS.knowledgeCenter,
         bgColor: '#F5F3FF',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10M9 6h.01M15 6h.01"/></svg>`
     },
     warehouse: {
         label: '창고',
-        color: '#EA580C',
+        color: ENTITY_COLORS.warehouse,
         bgColor: '#FFF7ED',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12H3z"/><rect x="9" y="13" width="6" height="8"/></svg>`
     },
     land: {
         label: '토지',
-        color: '#16A34A',
+        color: ENTITY_COLORS.land,
         bgColor: '#F0FDF4',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`
     },
@@ -942,29 +942,27 @@ function createKnowledgeCenterClusterDOM(count: number): HTMLDivElement {
 
 // 공장 마커 - 깔끔한 라벨 스타일
 function createFactoryMarkerDOM(name: string): HTMLDivElement {
-    const FACTORY_COLOR = '#0D9488';
     const container = document.createElement('div');
     container.style.cssText = MARKER_CONTAINER_STYLE.base;
     container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${FACTORY_COLOR}; border-radius: 6px; box-shadow: 0 2px 6px rgba(13, 148, 136, 0.4);">
+        <div style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${ENTITY_COLORS.factory}; border-radius: 6px; box-shadow: 0 2px 6px ${ENTITY_COLORS.factoryGlow};">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M2 20V8l6 4V8l6 4V4h8v16H2z"/></svg>
             <span style="font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap;">${truncateName(name, 10)}</span>
         </div>
-        ${createMarkerArrow(FACTORY_COLOR, 6)}
+        ${createMarkerArrow(ENTITY_COLORS.factory, 6)}
     `;
     return container;
 }
 
 // 공장 클러스터 마커 - 깔끔한 원형 배지
 function createFactoryClusterDOM(count: number): HTMLDivElement {
-    const FACTORY_COLOR = '#0D9488';
     const container = document.createElement('div');
     container.style.cssText = MARKER_CONTAINER_STYLE.base;
     container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: ${FACTORY_COLOR}; border-radius: 50%; box-shadow: 0 2px 6px rgba(13, 148, 136, 0.4); border: 2px solid #fff;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: ${ENTITY_COLORS.factory}; border-radius: 50%; box-shadow: 0 2px 6px ${ENTITY_COLORS.factoryGlow}; border: 2px solid #fff;">
             <span style="font-size: 14px; font-weight: 700; color: #fff;">${count}</span>
         </div>
-        <div style="font-size: 11px; color: ${FACTORY_COLOR}; font-weight: 600; margin-top: 2px;">공장</div>
+        <div style="font-size: 11px; color: ${ENTITY_COLORS.factory}; font-weight: 600; margin-top: 2px;">공장</div>
     `;
     return container;
 }
