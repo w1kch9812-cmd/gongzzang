@@ -209,22 +209,51 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         };
     }, [regionAggregations, parcelColorMode]);
 
-    // ===== 공장 GeoJSON (클러스터링용) =====
+    // ===== 공장 GeoJSON (같은 좌표 그룹화) =====
     const factoryGeoJSON = useMemo(() => {
-        const features = factories
+        // 좌표를 키로 그룹화 (소수점 6자리까지 반올림하여 근접 좌표 그룹화)
+        const coordKey = (coord: [number, number]) =>
+            `${coord[0].toFixed(6)},${coord[1].toFixed(6)}`;
+
+        const grouped = new Map<string, typeof factories>();
+
+        factories
             .filter(f => f.coord && f.coord[0] && f.coord[1])
-            .map(f => ({
+            .forEach(f => {
+                const key = coordKey(f.coord as [number, number]);
+                if (!grouped.has(key)) {
+                    grouped.set(key, []);
+                }
+                grouped.get(key)!.push(f);
+            });
+
+        // 그룹별로 하나의 Feature 생성
+        const features = Array.from(grouped.entries()).map(([key, group]) => {
+            const first = group[0];
+            const count = group.length;
+            const ids = group.map(f => f.id);
+
+            // 라벨: 1개면 이름만, 2개 이상이면 "이름 외 N개"
+            const label = count === 1
+                ? first.name
+                : `${first.name} 외 ${count - 1}`;
+
+            return {
                 type: 'Feature' as const,
                 properties: {
-                    id: f.id,
-                    name: f.name,
-                    businessType: f.businessType || '',
+                    id: first.id,
+                    ids: ids.join(','),  // 모든 ID (클릭 시 사용)
+                    name: first.name,
+                    label,               // 표시용 라벨
+                    count,               // 그룹 내 공장 수
+                    businessType: first.businessType || '',
                 },
                 geometry: {
                     type: 'Point' as const,
-                    coordinates: f.coord as [number, number],
+                    coordinates: first.coord as [number, number],
                 },
-            }));
+            };
+        });
 
         return {
             type: 'FeatureCollection' as const,
@@ -1049,6 +1078,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             });
 
             // 공장 아이콘 레이어 - 줌 12부터 서서히 나타남
+            // count가 많을수록 더 진하게 표시
             mbMap.addLayer({
                 id: 'factory-points',
                 type: 'symbol',
@@ -1067,27 +1097,33 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     'icon-ignore-placement': true,
                 },
                 paint: {
+                    // count 기반 투명도: 1개=0.5, 2개=0.7, 3개+=1.0
                     'icon-opacity': [
                         'interpolate', ['linear'], ['zoom'],
-                        ZOOM_EMD.min, 0,           // 줌 12: 투명
-                        ZOOM_PARCEL.min, 0.85,     // 줌 14: 85%
+                        ZOOM_EMD.min, 0,
+                        ZOOM_PARCEL.min, [
+                            'interpolate', ['linear'], ['get', 'count'],
+                            1, 0.5,    // 1개: 50%
+                            2, 0.7,    // 2개: 70%
+                            3, 1.0,    // 3개+: 100%
+                        ],
                     ],
                 },
             });
 
-            // 공장 라벨 (줌 17+) - teal 색상
+            // 공장 라벨 (줌 17+) - "이름 외 N개" 형식
             mbMap.addLayer({
                 id: 'factory-labels',
                 type: 'symbol',
                 source: 'factories',
                 minzoom: 17,
                 layout: {
-                    'text-field': ['get', 'name'],
+                    'text-field': ['get', 'label'],  // label 필드 사용 (그룹화된 이름)
                     'text-font': ['Open Sans Semibold', 'Arial Unicode MS Bold'],
                     'text-size': 9,
                     'text-offset': [0, 1.2],
                     'text-anchor': 'top',
-                    'text-max-width': 8,
+                    'text-max-width': 10,
                     'text-allow-overlap': false,
                     'text-optional': true,
                 },
