@@ -29,8 +29,10 @@ import { getSamplingHash } from '@/lib/utils/hash';
 import { COLORS, SHADOWS, BORDER_RADIUS, PADDING, FONT_SIZE, StyleHelper } from '@/lib/config/style.config';
 import { ZOOM_LEVELS, ZoomHelper } from '@/lib/config/map.config';
 import { CLUSTER_CONFIG, MarkerHelper as ConfigMarkerHelper } from '@/lib/config/marker.config';
-import { TIMING } from '@/lib/config/performance.config';
+import { TIMING, RENDERING } from '@/lib/config/performance.config';
 import { SOURCE_IDS } from '@/lib/config/layer.config';
+// ⚡ Canvas 렌더링
+import { CanvasMarkerRenderer, type CanvasMarker } from '@/lib/map/CanvasMarkerRenderer';
 
 interface UnifiedMarkerLayerProps {
     map: naver.maps.Map | null;
@@ -1021,6 +1023,10 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
     const markerManagerRef = useRef<MarkerManager | null>(null);
     const kcClusterRef = useRef<Supercluster | null>(null);
 
+    // ⚡ Canvas 렌더러 (GPU 가속)
+    const canvasRendererRef = useRef<CanvasMarkerRenderer | null>(null);
+    const canvasLayerAddedRef = useRef(false);
+
     // ⚡ 성능: Supercluster.getClusters() 결과 캐싱 (줌 렉 방지)
     const clusterCacheRef = useRef<Map<string, any[]>>(new Map());
 
@@ -1046,6 +1052,48 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             markerManagerRef.current = null;
         };
     }, []);
+
+    // ⚡ Canvas 렌더러 초기화
+    useEffect(() => {
+        if (!RENDERING.useCanvasMarkers || !map) return;
+
+        // 내부 Mapbox GL 인스턴스 접근
+        const mbMap = (map as any)._mapbox;
+        if (!mbMap) return;
+
+        // Canvas 렌더러 생성
+        if (!canvasRendererRef.current) {
+            canvasRendererRef.current = new CanvasMarkerRenderer();
+        }
+
+        // Mapbox GL Custom Layer 추가
+        if (!canvasLayerAddedRef.current) {
+            const layer = canvasRendererRef.current.getLayer('canvas-markers');
+
+            try {
+                // 다른 마커 레이어 위에 표시
+                mbMap.addLayer(layer);
+                canvasLayerAddedRef.current = true;
+                logger.log('[Canvas] ⚡ Canvas 마커 레이어 추가 완료');
+            } catch (e) {
+                logger.warn('[Canvas] 레이어 추가 실패:', e);
+            }
+        }
+
+        return () => {
+            // 정리
+            if (canvasLayerAddedRef.current) {
+                try {
+                    mbMap.removeLayer('canvas-markers');
+                    canvasLayerAddedRef.current = false;
+                } catch (e) {
+                    // ignore - 이미 제거되었을 수 있음
+                }
+            }
+            canvasRendererRef.current?.cleanup();
+            canvasRendererRef.current = null;
+        };
+    }, [map]);
 
     // 지도 인스턴스 연결
     useEffect(() => {
@@ -1727,7 +1775,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
                 if (cache.has(overlapCacheKey)) {
                     // 캐시 히트: projection 계산 스킵!
-                    const cached = cache.get(overlapCacheKey)!;
+                    const cached = cache.get(overlapCacheKey) as any;
                     allTxPoints = cached.allTxPoints;
                     overlapSet = cached.overlapSet;
                 } else {
@@ -1798,7 +1846,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                     });
 
                     // ⚡ 캐시에 저장
-                    cache.set(overlapCacheKey, { allTxPoints, overlapSet });
+                    cache.set(overlapCacheKey, { allTxPoints, overlapSet } as any);
                     if (cache.size > 50) {
                         const firstKey = cache.keys().next().value;
                         cache.delete(firstKey);
@@ -1838,11 +1886,67 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 });
                 useMapStore.getState().setOverlappingTxMarkers(overlappingMarkers);
 
-                // 4. 비겹침 마커만 DOM으로 렌더링
+                // 4. 비겹침 마커만 렌더링 (Canvas 또는 DOM)
                 // 우선순위: 매물/경매가 있으면 실거래 마커 숨김
                 let selectedRenderedInTx = false; // 선택된 필지가 실거래가 마커로 렌더링되었는지
 
-                allTxPoints.forEach((item, idx) => {
+                // ⚡ Canvas 렌더링 경로 (DOM 대체)
+                if (RENDERING.useCanvasMarkers && canvasRendererRef.current) {
+                    const canvasMarkers: CanvasMarker[] = [];
+
+                    allTxPoints.forEach((item, idx) => {
+                        if (overlapSet.has(idx)) return; // 겹치는 마커는 점 마커로 렌더링
+
+                        const { point, propType, lat, lng } = item;
+                        const props = point.properties;
+
+                        // 우선순위: 매물이나 경매가 있으면 실거래 DOM 마커는 숨김
+                        if (props.hasListing || props.hasAuction) return;
+
+                        const isSelected = selectedId && props.id === selectedId;
+
+                        if (isSelected) {
+                            selectedRenderedInTx = true;
+                        }
+
+                        // 가격 텍스트
+                        let priceText: string;
+                        if (transactionPriceDisplayMode === 'perPyeong') {
+                            const ppp = props.pricePerPyeong || 0;
+                            priceText = formatPricePerPyeong(ppp) || formatTotalPrice(props.price);
+                        } else {
+                            priceText = formatTotalPrice(props.price);
+                        }
+
+                        // Canvas 마커 데이터 생성
+                        canvasMarkers.push({
+                            id: `tx-${propType}-${props.id}`,
+                            lng,
+                            lat,
+                            type: 'transaction',
+                            text: priceText,
+                            subtext: isSelected ? (selectedParcel?.jibun || props.jibun) : undefined,
+                            bgColor: isSelected ? HIGHLIGHT_MARKER_STYLE.bgColor : TRANSACTION_MARKER_STYLE.bgColor,
+                            textColor: isSelected ? HIGHLIGHT_MARKER_STYLE.textColor : TRANSACTION_MARKER_STYLE.color.price,
+                            borderColor: isSelected ? HIGHLIGHT_MARKER_STYLE.borderColor : TRANSACTION_MARKER_STYLE.borderColor,
+                            shadow: isSelected ? HIGHLIGHT_MARKER_STYLE.shadow : TRANSACTION_MARKER_STYLE.shadow,
+                            size: { width: isSelected ? 120 : 80, height: isSelected ? 50 : 32 },
+                            fontSize: {
+                                main: isSelected ? parseFloat(HIGHLIGHT_MARKER_STYLE.fontSize.price) : parseFloat(TRANSACTION_MARKER_STYLE.fontSize.price),
+                                sub: isSelected ? parseFloat(HIGHLIGHT_MARKER_STYLE.fontSize.info) : parseFloat(TRANSACTION_MARKER_STYLE.fontSize.type),
+                            },
+                            data: props,
+                            onClick: () => handleParcelClick(props.id),
+                        });
+                    });
+
+                    // Canvas에 일괄 렌더링
+                    canvasRendererRef.current.setMarkers(canvasMarkers);
+                    logger.log(`[Canvas] ⚡ 실거래 마커 ${canvasMarkers.length}개 렌더링`);
+
+                } else {
+                    // 🔻 DOM 렌더링 경로 (기존 방식, Canvas 비활성화 시만 사용)
+                    allTxPoints.forEach((item, idx) => {
                     if (overlapSet.has(idx)) return; // 겹치는 마커는 점 마커로 렌더링
 
                     const { point, propType, lat, lng } = item;
@@ -1911,9 +2015,12 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         };
                         manager.setupHoverEffect(markerId, pooledMarker, baseZIndex, clickHandler);
                     }
-                });
+                    }); // DOM forEach 종료
+                } // else (DOM 렌더링) 종료
 
                 // 5. 선택된 필지가 겹치는 마커(점)였던 경우 → 별도 하이라이트 마커 렌더링
+                // ⚠️ Canvas 모드에서는 위 Canvas 마커 생성에서 이미 처리됨 (isSelected 분기)
+                if (!RENDERING.useCanvasMarkers) {
                 if (selectedParcel && selectedInOverlap && !selectedRenderedInTx) {
                     const selectedPoint = allTxPoints.find(item => item.point.properties.id === selectedId);
                     if (selectedPoint) {
@@ -1951,6 +2058,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         }
                     }
                 }
+                } // if (!RENDERING.useCanvasMarkers) 종료
             } else {
                 // 실거래 마커 비활성화 시 겹침 데이터 초기화
                 useMapStore.getState().setOverlappingTxMarkers([]);

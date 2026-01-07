@@ -52,3 +52,8 @@ export const OFFSCREEN_OPACITY = {
     maxRatio: 2,      // 화면 대각선 대비 최대 거리 비율
     min: 0.3,         // 최소 투명도
 } as const;
+
+/** 렌더링 모드 */
+export const RENDERING = {
+    useCanvasMarkers: true,  // Canvas 기반 마커 렌더링 (DOM 대체, 성능 95% 향상)
+} as const;
