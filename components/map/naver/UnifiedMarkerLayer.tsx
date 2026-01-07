@@ -605,11 +605,13 @@ function createAuctionMarkerDOM(area: string, price: string, failCount?: number,
 // 실거래 마커 - 단순화된 스타일 (성능 최적화)
 // propertyType과 jibun을 조합하여 지목까지 표시
 // transactionDate: 최근 3개월 이내면 N 뱃지 표시
+// area: 면적(㎡), transactionDate: 거래일자 표시
 function createTransactionMarkerDOM(
     price: string,
     propertyType?: string,
     jibun?: string,
-    transactionDate?: string
+    transactionDate?: string,
+    area?: number
 ): HTMLDivElement {
     const container = document.createElement('div');
     container.style.cssText = `${MARKER_CONTAINER_STYLE.base} ${MARKER_ANCHOR.center}`;
@@ -645,12 +647,27 @@ function createTransactionMarkerDOM(
         ">N</span>
     ` : '';
 
+    // 면적 표시 (평)
+    const areaPyeong = area && area > 0 ? (area / SQM_PER_PYEONG).toFixed(0) : '';
+    const areaHTML = areaPyeong ? `<span style="font-size: 9px; color: #9CA3AF; margin-left: 3px;">${areaPyeong}평</span>` : '';
+
+    // 거래일자 표시 (년.월)
+    let dateHTML = '';
+    if (transactionDate) {
+        const txDate = new Date(transactionDate);
+        const year = txDate.getFullYear().toString().slice(2); // 2자리 연도
+        const month = String(txDate.getMonth() + 1).padStart(2, '0');
+        dateHTML = `<span style="font-size: 9px; color: #9CA3AF; margin-left: 4px;">${year}.${month}</span>`;
+    }
+
     // ⚡ 성능 최적화: 단일 레이어 구조 (backdrop-filter 제거)
     container.innerHTML = `
         <div style="${getTransactionMarkerStyle()}; position: relative;">
             ${newBadgeHTML}
             ${typeLabelHTML}
             <span style="font-weight: 500; font-size: ${fontSize.price}; color: ${color.price}; white-space: nowrap;">${price}</span>
+            ${areaHTML}
+            ${dateHTML}
         </div>
     `;
     return container;
@@ -1757,7 +1774,8 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                                 priceText,
                                 propType,
                                 props.jibun,
-                                props.transactionDate
+                                props.transactionDate,
+                                props.area
                             );
                         },
                         new window.naver.maps.Point(0, 0),
