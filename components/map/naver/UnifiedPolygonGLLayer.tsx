@@ -89,6 +89,8 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
     const mapboxGLRef = useRef<any>(null);
     const [mapboxGLReady, setMapboxGLReady] = useState(false);
     const clickStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
+    // 비동기 요청 취소를 위한 ref (race condition 방지)
+    const pendingRequestRef = useRef<string | null>(null);
 
     // UIStore - UI 상태
     const visibleLayers = useUIStore((state) => state.visibleLayers);
@@ -318,44 +320,57 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
             logger.log(`🖱️ [Polygon 클릭] PNU: ${pnu}`);
 
+            // 이전 요청 취소 (race condition 방지)
+            pendingRequestRef.current = pnu;
+
             // parcel-markers 데이터에서 좌표 가져오기 (polylabel 좌표 사용)
             const dataState = useDataStore.getState();
             const markerData = dataState.getParcelById(pnu);
 
             // PMTiles 기본 정보로 즉시 패널 열기
-            const basicParcelInfo = {
+            const basicParcelInfo: Partial<import('@/types/data').ParcelDetail> = {
                 id: pnu,
                 pnu: pnu,
                 jibun: feature.properties?.jibun || feature.properties?.JIBUN || '',
                 address: feature.properties?.jibun || feature.properties?.JIBUN || '',
                 area: feature.properties?.AREA || feature.properties?.area || 0,
                 transactionPrice: feature.properties?.price || feature.properties?.PRICE || 0,
-                coord: markerData?.coord, // polylabel 좌표 사용
+                coord: markerData?.coord,
             };
 
+            // 즉시 선택 및 패널 열기 (setSelectedParcel이 패널도 열어줌)
             const selectionActions = useSelectionStore.getState();
-            import('@/lib/stores/ui-store').then(({ useUIStore }) => {
-                const uiActions = useUIStore.getState();
-                selectionActions.setSelectedParcel(basicParcelInfo as any);
-                uiActions.openSidePanel('detail');
-                logger.log(`✅ [Polygon] 패널 열기: ${pnu} (coord: ${markerData?.coord})`);
-            });
+            selectionActions.setSelectedParcel(basicParcelInfo as any);
+            logger.log(`✅ [Polygon] 패널 열기: ${pnu}`);
 
             // API로 상세 정보 로드 (백그라운드)
+            const requestPnu = pnu; // 클로저 캡처
             Promise.all([
                 fetch(`/api/parcel/${pnu}`).then(res => res.ok ? res.json() : null),
                 import('@/lib/data/loadData')
             ]).then(async ([apiData, { loadFactoryDetail, loadKnowledgeCenterDetail }]) => {
+                // 요청 취소 확인: 다른 필지가 이미 선택되었으면 무시
+                if (pendingRequestRef.current !== requestPnu) {
+                    logger.log(`⏭️ [API] 요청 취소: ${requestPnu} (현재: ${pendingRequestRef.current})`);
+                    return;
+                }
+
                 const dataState = useDataStore.getState();
 
                 // 공장/지식산업센터 필터링 및 상세 로드
-                const matchingFactories = dataState.factories.filter(f => f.pnu === pnu);
-                const matchingKCs = dataState.knowledgeCenters.filter(kc => kc.pnu === pnu);
+                const matchingFactories = dataState.factories.filter(f => f.pnu === requestPnu);
+                const matchingKCs = dataState.knowledgeCenters.filter(kc => kc.pnu === requestPnu);
 
                 const [factoryDetails, kcDetails] = await Promise.all([
                     Promise.all(matchingFactories.map(f => loadFactoryDetail(f.id))),
                     Promise.all(matchingKCs.map(kc => loadKnowledgeCenterDetail(kc.id))),
                 ]);
+
+                // 요청 취소 확인 (상세 로드 후 다시 체크)
+                if (pendingRequestRef.current !== requestPnu) {
+                    logger.log(`⏭️ [API] 상세 로드 후 취소: ${requestPnu}`);
+                    return;
+                }
 
                 const validFactories = factoryDetails.filter((f): f is NonNullable<typeof f> => f !== null);
                 const validKCs = kcDetails.filter((kc): kc is NonNullable<typeof kc> => kc !== null);
@@ -366,8 +381,12 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     : { ...basicParcelInfo, factories: validFactories, knowledgeIndustryCenters: validKCs };
 
                 selectionActions.setSelectedParcel(enrichedDetail as any);
-                logger.log(`🔄 [API] 상세 로드: 공장 ${validFactories.length}개, 지산 ${validKCs.length}개`);
-            }).catch(err => logger.error('❌ 상세 로드 실패:', err));
+                logger.log(`🔄 [API] 상세 로드 완료: ${requestPnu}, 공장 ${validFactories.length}개, 지산 ${validKCs.length}개`);
+            }).catch(err => {
+                if (pendingRequestRef.current === requestPnu) {
+                    logger.error('❌ 상세 로드 실패:', err);
+                }
+            });
         }
 
         clickStartRef.current = null;

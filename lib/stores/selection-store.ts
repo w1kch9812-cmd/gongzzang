@@ -82,11 +82,11 @@ export const useSelectionStore = create<SelectionStore>()(
 
         setSelectedParcel: (parcel) => {
             set({ selection: parcel ? { type: 'parcel', data: parcel } : null });
-            // UI 패널 열기
+            // UI 패널 열기 (동기적으로 처리)
             if (parcel) {
-                import('@/lib/stores/ui-store').then(({ useUIStore }) => {
-                    useUIStore.getState().openSidePanel('detail');
-                });
+                // 동적 import 대신 직접 호출 (이미 로드된 모듈)
+                const { useUIStore } = require('@/lib/stores/ui-store');
+                useUIStore.getState().openSidePanel('detail');
             }
         },
         setSelectedComplex: (complex) => {
