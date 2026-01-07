@@ -12,7 +12,7 @@ import {
 } from '@tabler/icons-react';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { useUIStore } from '@/lib/stores/ui-store';
-import { RIGHT_SIDEBAR_COLLAPSED, RIGHT_SIDEBAR_EXPANDED } from '@/lib/constants/ui';
+import { PANEL, UIHelper } from '@/lib/config/ui.config';
 import dynamic from 'next/dynamic';
 
 const FavoritesPanel = dynamic(() => import('./FavoritesPanel'), { ssr: false });
@@ -29,7 +29,7 @@ export default function RightSidebar() {
 
     // collapsed 상태 변경 시 전역 store 업데이트
     useEffect(() => {
-        setRightSidebarWidth(collapsed ? RIGHT_SIDEBAR_COLLAPSED : RIGHT_SIDEBAR_EXPANDED);
+        setRightSidebarWidth(collapsed ? PANEL.right.collapsed : PANEL.right.expanded);
     }, [collapsed, setRightSidebarWidth]);
 
     const handlePanelToggle = (panel: 'favorites' | 'compare' | 'recent') => {
@@ -47,7 +47,7 @@ export default function RightSidebar() {
     return (
         <div
             style={{
-                width: 48,  // 항상 48px (아이콘 버튼 영역)
+                width: PANEL.right.collapsed,  // 항상 48px (아이콘 버튼 영역)
                 height: '100vh',
                 position: 'relative',
                 flexShrink: 0,
@@ -55,11 +55,12 @@ export default function RightSidebar() {
         >
             {/* 확장 패널 (왼쪽으로 슬라이드) */}
             <Box
+                key="expanded-panel"
                 style={{
                     position: 'absolute',
                     top: 0,
-                    right: collapsed ? -360 : 48,  // 닫혔을 때 화면 밖으로, 열렸을 때 아이콘 왼쪽에 위치
-                    width: 360,
+                    right: UIHelper.getRightSidebarOffset(collapsed),  // 닫혔을 때 화면 밖으로, 열렸을 때 아이콘 왼쪽에 위치
+                    width: PANEL.right.panelWidth,
                     height: '100%',
                     backgroundColor: 'white',
                     borderLeft: '1px solid #e9ecef',
@@ -192,6 +193,7 @@ export default function RightSidebar() {
 
             {/* 아이콘 버튼 영역 (항상 표시) */}
             <Stack
+                key="icon-buttons"
                 gap="xs"
                 align="center"
                 pt="lg"
@@ -199,7 +201,7 @@ export default function RightSidebar() {
                     position: 'absolute',
                     top: 0,
                     right: 0,
-                    width: 48,
+                    width: PANEL.right.collapsed,
                     height: '100%',
                     backgroundColor: 'white',
                     borderLeft: '1px solid #e9ecef',

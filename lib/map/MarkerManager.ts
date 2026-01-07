@@ -2,28 +2,18 @@
 // DOM 재사용으로 성능 최적화
 
 import { logger } from '@/lib/utils/logger';
+// ✅ 설정 파일 사용 (Single Source of Truth)
+import {
+    MARKER_POOL_LIMITS,
+    MARKER_TYPES,
+    type MarkerType as ConfigMarkerType
+} from '@/lib/config/marker.config';
+import { useMapStore } from '@/lib/stores/map-store';
 
 // ===== 타입 정의 =====
 
-export type MarkerType =
-    | 'transaction'
-    | 'listing'
-    | 'auction'
-    | 'cluster-tx'      // 실거래 클러스터
-    | 'cluster-prop'    // 매물/경매 클러스터
-    | 'region'          // 행정구역
-    | 'kc'              // 지식산업센터
-    | 'kc-cluster'      // 지식산업센터 클러스터
-    | 'kc-ad'           // 지식산업센터 광고
-    | 'ic'              // 산업단지 (Industrial Complex)
-    | 'ic-cluster'      // 산업단지 클러스터
-    | 'ic-ad'           // 산업단지 광고
-    | 'factory'         // 공장
-    | 'factory-cluster' // 공장 클러스터
-    | 'warehouse'       // 창고
-    | 'warehouse-cluster' // 창고 클러스터
-    | 'land'            // 토지
-    | 'land-cluster';   // 토지 클러스터
+// ✅ 설정 파일의 MarkerType 재사용
+export type MarkerType = ConfigMarkerType;
 
 export interface PooledMarker {
     marker: naver.maps.Marker;
@@ -38,28 +28,7 @@ interface MarkerPool {
     inUse: Map<string, PooledMarker>;  // 사용 중 (markerId → marker)
 }
 
-// ===== 풀 크기 제한 설정 =====
-// 메모리 누수 방지: 타입별 최대 풀 크기
-const POOL_SIZE_LIMITS: Record<MarkerType, number> = {
-    'transaction': 100,
-    'listing': 100,
-    'auction': 100,
-    'cluster-tx': 50,
-    'cluster-prop': 50,
-    'region': 30,
-    'kc': 50,
-    'kc-cluster': 30,
-    'kc-ad': 20,
-    'ic': 50,
-    'ic-cluster': 30,
-    'ic-ad': 20,
-    'factory': 200,        // 공장이 가장 많음
-    'factory-cluster': 50,
-    'warehouse': 100,
-    'warehouse-cluster': 30,
-    'land': 100,
-    'land-cluster': 30,
-};
+// ✅ 풀 크기 제한은 설정 파일에서 가져옴 (MARKER_POOL_LIMITS)
 
 // ===== 간단한 해시 함수 (내용 비교용) =====
 function simpleHash(str: string): string {
@@ -79,6 +48,7 @@ export class MarkerManager {
     private map: naver.maps.Map | null = null;
     private hoveredMarkerId: string | null = null;
     private destroyedCount: number = 0;  // 풀 초과로 파괴된 마커 수 (디버깅용)
+    private clickTimerRef: NodeJS.Timeout | null = null;  // ✅ race condition 방지
 
     // ⚡ 성능 측정용 카운터
     private stats = {
@@ -89,13 +59,8 @@ export class MarkerManager {
     };
 
     constructor() {
-        // 타입별 풀 초기화
-        const types: MarkerType[] = [
-            'transaction', 'listing', 'auction',
-            'cluster-tx', 'cluster-prop', 'region', 'kc', 'kc-cluster', 'kc-ad',
-            'ic', 'ic-cluster', 'ic-ad',
-            'factory', 'factory-cluster', 'warehouse', 'warehouse-cluster', 'land', 'land-cluster',
-        ];
+        // ✅ 설정 파일의 MARKER_TYPES 사용
+        const types = Object.values(MARKER_TYPES) as MarkerType[];
         for (const type of types) {
             this.pools.set(type, { available: [], inUse: new Map() });
         }
@@ -231,8 +196,8 @@ export class MarkerManager {
             pooledMarker.cleanup = undefined;
         }
 
-        // 풀 크기 제한 확인
-        const maxSize = POOL_SIZE_LIMITS[type] || 50;
+        // ✅ 설정 파일의 MARKER_POOL_LIMITS 사용
+        const maxSize = MARKER_POOL_LIMITS[type] || 50;
 
         if (pool.available.length >= maxSize) {
             // 풀이 가득 찬 경우: 마커 완전 파괴 (메모리 해제)
@@ -337,9 +302,16 @@ export class MarkerManager {
         // mousedown 이벤트도 차단하여 Mapbox GL 폴리곤 클릭과 충돌 방지
         const handleMouseDown = (e: Event) => {
             e.stopPropagation();
-            // 전역 플래그 설정 (폴리곤 클릭 무시용)
-            window.__markerClicking = true;
-            setTimeout(() => { window.__markerClicking = false; }, 100);
+            // ✅ 이전 타이머 취소 (race condition 방지)
+            if (this.clickTimerRef) {
+                clearTimeout(this.clickTimerRef);
+            }
+            // ✅ Store 사용 (전역 window 오염 제거)
+            useMapStore.getState().setMarkerClickingId(markerId);
+            this.clickTimerRef = setTimeout(() => {
+                useMapStore.getState().setMarkerClickingId(null);
+                this.clickTimerRef = null;
+            }, 150);  // 100ms → 150ms (더 안정적)
         };
 
         container.addEventListener('mousedown', handleMouseDown);
@@ -426,6 +398,13 @@ export class MarkerManager {
 
         this.hoveredMarkerId = null;
         this.map = null; // 지도 참조도 해제
+
+        // ✅ 클릭 타이머 정리
+        if (this.clickTimerRef) {
+            clearTimeout(this.clickTimerRef);
+            this.clickTimerRef = null;
+        }
+
         logger.log(`[MarkerManager] disposed: ${cleanedCount}개 마커 정리됨`);
     }
 

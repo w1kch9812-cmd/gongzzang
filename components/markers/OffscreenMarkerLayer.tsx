@@ -6,7 +6,7 @@ import { useMapStore } from '@/lib/stores/map-store';
 import { useDataStore } from '@/lib/stores/data-store';
 import { OffscreenIndicator, OffscreenTargetType } from './OffscreenIndicator';
 import { calculateDistance, calculateBearing, hasValidCoordinate } from '@/lib/utils/geoHelpers';
-import { MAX_OFFSCREEN_MARKERS } from '@/lib/constants';
+import { OFFSCREEN_MARKER_CONFIG } from '@/lib/config/marker.config';
 
 interface OffscreenMarkerLayerProps {
     map: naver.maps.Map | null;
@@ -290,8 +290,8 @@ function OffscreenMarkerLayerInner({ map }: OffscreenMarkerLayerProps) {
 
         // 산업단지/지식산업센터 최대 개수 제한
         return [
-            ...icItems.slice(0, MAX_OFFSCREEN_MARKERS.ic),
-            ...kcItems.slice(0, MAX_OFFSCREEN_MARKERS.kc)
+            ...icItems.slice(0, OFFSCREEN_MARKER_CONFIG.maxCount.ic),
+            ...kcItems.slice(0, OFFSCREEN_MARKER_CONFIG.maxCount.kc)
         ];
     }, [targets, mapState]);
 

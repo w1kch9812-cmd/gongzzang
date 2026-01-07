@@ -53,6 +53,7 @@ import {
 import { useUIStore } from '@/lib/stores/ui-store';
 import { FILTER_PRESETS, type PropertyType, type DealTypePrice } from '@/lib/stores/types';
 import RegionDrilldown from '@/components/common/RegionDrilldown';
+import { MODAL } from '@/lib/config/ui.config';
 
 // ========================================
 // KSIC 업종 코드 데이터
@@ -439,7 +440,7 @@ function SaveFilterDialog({ opened, onClose, onSave }: SaveFilterDialogProps) {
                 shadow="xl"
                 radius="lg"
                 p="lg"
-                style={{ width: 400, maxHeight: '80%', overflow: 'visible', zIndex: 10004 }}
+                style={{ width: MODAL.filter.width, maxHeight: '80%', overflow: 'visible', zIndex: 10004 }}
                 onClick={(e) => e.stopPropagation()}
             >
                 <Group justify="space-between" mb="md">

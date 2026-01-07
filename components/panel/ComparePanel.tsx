@@ -4,7 +4,7 @@ import { Drawer, Stack, Paper, Text, Button, Group, ActionIcon, Table, Badge, Al
 import { IconX, IconAlertCircle, IconScale, IconTrash } from '@tabler/icons-react';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
 import { useComparePanelOpen, useComparePanelActions } from '@/lib/stores/ui-store';
-import { SIDE_PANEL_WIDTH, COMPARE_PANEL_WIDTH, SIDE_PANEL_Z_INDEX } from '@/lib/constants/ui';
+import { PANEL } from '@/lib/config/ui.config';
 import type { ParcelDetail, IndustrialComplexDetail, Factory, KnowledgeIndustryCenter } from '@/types/data';
 
 // 비교 항목에서 표시할 데이터 추출
@@ -164,8 +164,8 @@ export default function ComparePanel() {
             opened={comparePanelOpen}
             onClose={closeComparePanel}
             position="left"
-            size={COMPARE_PANEL_WIDTH}
-            offset={SIDE_PANEL_WIDTH}
+            size={PANEL.compare.width}
+            offset={PANEL.side.width}
             title={
                 <Group gap="xs">
                     <IconScale size={20} />
@@ -176,7 +176,7 @@ export default function ComparePanel() {
                 </Group>
             }
             styles={{
-                root: { zIndex: SIDE_PANEL_Z_INDEX - 1 },
+                root: { zIndex: PANEL.side.zIndex - 1 },
                 header: { padding: '16px 20px' },
                 body: { padding: 0 },
                 content: { pointerEvents: 'auto' }

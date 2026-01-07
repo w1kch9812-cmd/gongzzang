@@ -16,18 +16,24 @@ export interface OverlappingTxMarker {
 
 interface MapState {
     mapReady: boolean;
-    mapInstance: any | null;
+    mapInstance: naver.maps.Map | null;
     currentZoom: number;
     currentBounds: ViewportBounds | null;
     currentLocation: { sido: string; sig: string; emd: string } | null;
     currentMapType: 'normal' | 'satellite' | 'hybrid' | 'terrain';
     // 겹치는 실거래 마커 (Deck.gl로 점 렌더링)
     overlappingTxMarkers: OverlappingTxMarker[];
+
+    // ✅ Mapbox GL 인스턴스 (전역 window 오염 방지)
+    mapboxGL: any | null;
+
+    // ✅ 마커 클릭 상태 (이벤트 충돌 방지, 전역 window.__markerClicking 대체)
+    markerClickingId: string | null;
 }
 
 interface MapActions {
     setMapReady: (ready: boolean) => void;
-    setMapInstance: (map: any) => void;
+    setMapInstance: (map: naver.maps.Map | null) => void;
     setCurrentZoom: (zoom: number) => void;
     setCurrentBounds: (bounds: ViewportBounds) => void;
     setCurrentLocation: (location: { sido: string; sig: string; emd: string } | null) => void;
@@ -35,6 +41,12 @@ interface MapActions {
     zoomIn: () => void;
     zoomOut: () => void;
     setOverlappingTxMarkers: (markers: OverlappingTxMarker[]) => void;
+
+    // ✅ Mapbox GL 인스턴스 관리
+    setMapboxGL: (instance: any | null) => void;
+
+    // ✅ 마커 클릭 상태 관리 (타이머와 함께 사용)
+    setMarkerClickingId: (id: string | null) => void;
 }
 
 type MapStore = MapState & MapActions;
@@ -49,6 +61,8 @@ export const useMapStore = create<MapStore>()(
         currentLocation: null,
         currentMapType: 'normal',
         overlappingTxMarkers: [],
+        mapboxGL: null,  // ✅ Mapbox GL 인스턴스
+        markerClickingId: null,  // ✅ 마커 클릭 상태
 
         // Actions
         setMapReady: (ready) => set({ mapReady: ready }),
@@ -93,6 +107,12 @@ export const useMapStore = create<MapStore>()(
         },
 
         setOverlappingTxMarkers: (markers) => set({ overlappingTxMarkers: markers }),
+
+        // ✅ Mapbox GL 인스턴스 관리
+        setMapboxGL: (instance) => set({ mapboxGL: instance }),
+
+        // ✅ 마커 클릭 상태 관리
+        setMarkerClickingId: (id) => set({ markerClickingId: id }),
     }))
 );
 

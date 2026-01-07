@@ -25,9 +25,6 @@
     "map:complex": "npx tsx scripts/map-parcels-to-complexes.ts"
   },
   "dependencies": {
-    "@deck.gl/core": "^9.2.5",
-    "@deck.gl/layers": "^9.2.5",
-    "@deck.gl/mapbox": "^9.2.5",
     "@mantine/core": "^8.3.10",
     "@mantine/hooks": "^8.3.10",
     "@mantine/modals": "^8.3.10",

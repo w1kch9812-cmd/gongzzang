@@ -25,8 +25,8 @@ import {
 import { useAnalysisModal, useAnalysisModalActions, useActiveSidePanel, useSidePanelActions } from '@/lib/stores/ui-store';
 import { useMapStore } from '@/lib/stores/map-store';
 import { useDataStore } from '@/lib/stores/data-store';
-import { ZOOM_SIG, ZOOM_PARCEL } from '@/lib/map/zoomConfig';
-import { SIDE_PANEL_WIDTH, SIDE_PANEL_Z_INDEX } from '@/lib/constants/ui';
+import { ZOOM_LEVELS } from '@/lib/config/map.config';
+import { PANEL } from '@/lib/config/ui.config';
 import { RegionDrilldownPopover } from '@/components/common/RegionDrilldown';
 import { PriceAnalysis } from '@/components/analysis/PriceAnalysis';
 import { IndustryAnalysis } from '@/components/analysis/IndustryAnalysis';
@@ -75,7 +75,7 @@ export default function AnalysisPanel() {
 
     // 드릴다운에서 지역 선택 시
     const handleRegionSelect = (level: 'sig' | 'emd', code: string, name: string, coord: [number, number]) => {
-        const zoomLevel = level === 'sig' ? ZOOM_SIG.min + 1 : ZOOM_PARCEL.min;
+        const zoomLevel = level === 'sig' ? ZOOM_LEVELS.SIG.min + 1 : ZOOM_LEVELS.PARCEL.min;
         moveToRegion(coord, zoomLevel);
         // 분석 대상 변경
         openModal(level, code, name);
@@ -106,7 +106,7 @@ export default function AnalysisPanel() {
             opened={isOpen}
             onClose={handleClose}
             position="left"
-            size={SIDE_PANEL_WIDTH}
+            size={PANEL.side.width}
             title={
                 <Group gap="sm">
                     <ThemeIcon size="lg" variant="light" color="blue" radius="md">
@@ -169,7 +169,7 @@ export default function AnalysisPanel() {
             withOverlay={false}
             lockScroll={false}
             trapFocus={false}
-            zIndex={SIDE_PANEL_Z_INDEX}
+            zIndex={PANEL.side.zIndex}
         >
             <Tabs defaultValue="price" variant="pills" pt="md" px="md">
                 <Tabs.List mb="lg" style={{ position: 'sticky', top: 0, background: 'white', zIndex: 1, paddingBottom: 8 }}>

@@ -2,21 +2,23 @@
 // 개발 환경에서만 로그 출력, 프로덕션에서는 warn/error만 출력
 
 const isDev = process.env.NODE_ENV === 'development';
+// ⚡ 성능: 로그 완전 비활성화 (렉 해결용)
+const ENABLE_LOGS = false;
 
 export const logger = {
     /** 일반 로그 (개발 환경에서만 출력) */
     log: (...args: unknown[]) => {
-        if (isDev) console.log(...args);
+        if (isDev && ENABLE_LOGS) console.log(...args);
     },
 
     /** 정보 로그 (개발 환경에서만 출력) */
     info: (...args: unknown[]) => {
-        if (isDev) console.info(...args);
+        if (isDev && ENABLE_LOGS) console.info(...args);
     },
 
     /** 디버그 로그 (개발 환경에서만 출력) */
     debug: (...args: unknown[]) => {
-        if (isDev) console.debug(...args);
+        if (isDev && ENABLE_LOGS) console.debug(...args);
     },
 
     /** 경고 로그 (항상 출력) */
