@@ -511,9 +511,7 @@ function getTypeInfo(propertyType: string | undefined, jibun: string | undefined
     };
 }
 
-// 매물 마커 - 매물 유형 표시 포함
-// 매물 마커 - 미니멀 디자인 (흰 배경 + 파란 테두리)
-// auctionInfo: { price: number, failCount: number } - 경매 정보 (옵션)
+// 매물 마커 - 컴팩트 강조 디자인 (연파랑 배경)
 function createListingMarkerDOM(
     area: string,
     price: string,
@@ -522,58 +520,15 @@ function createListingMarkerDOM(
     auctionInfo?: { price: number; failCount: number }
 ): HTMLDivElement {
     const LISTING_COLOR = '#2563EB';
+    const LISTING_BG = '#EFF6FF';
     const container = document.createElement('div');
     container.style.cssText = `${MARKER_CONTAINER_STYLE.base} ${MARKER_ANCHOR.bottom}`;
 
-    const dealTypeLabel = dealType === '임대' ? '임대' : dealType === '분양' ? '분양' : '매매';
-    const typeLabel = propertyType === 'land' ? '토지' : propertyType === 'factory' ? '공장' : propertyType === 'warehouse' ? '창고' : '';
-    const typeBadgeHTML = typeLabel ? `<span style="font-size: 8px; color: #64748B; padding: 1px 4px; background: #F1F5F9; border-radius: 2px;">${typeLabel}</span>` : '';
+    const dealTypeLabel = dealType === '임대' ? '임대' : dealType === '분양' ? '분양' : dealType === '전세' ? '전세' : '매매';
 
-    // 경매 정보가 있으면 하단에 작은 텍스트로 표시
+    // 경매 정보가 있으면 간략하게 표시
     const auctionInfoHTML = auctionInfo ? `
-        <div style="font-size: 8px; color: #DC2626; line-height: 1; font-weight: 600;">
-            경매 최저가 ${formatPrice(auctionInfo.price)}${auctionInfo.failCount > 0 ? `(${auctionInfo.failCount})` : ''}
-        </div>
-    ` : '';
-
-    container.innerHTML = `
-        <div style="
-            display: flex;
-            flex-direction: column;
-            gap: 3px;
-            padding: 6px 9px;
-            background: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1.5px solid ${LISTING_COLOR};
-            min-width: 70px;
-        ">
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-                <span style="font-size: 10px; font-weight: 700; color: ${LISTING_COLOR};">${dealTypeLabel}</span>
-                ${typeBadgeHTML}
-            </div>
-            <div style="font-weight: 800; font-size: 14px; color: #1F2937; line-height: 1;">${price}</div>
-            <div style="font-size: 9px; color: #9CA3AF; line-height: 1;">${area}</div>
-            ${auctionInfoHTML}
-        </div>
-        ${createMarkerArrow('#fff', 6, LISTING_COLOR)}
-    `;
-    return container;
-}
-
-// 경매 마커 - 미니멀 디자인 (흰 배경 + 빨간 테두리, 유찰 강조)
-function createAuctionMarkerDOM(area: string, price: string, failCount?: number, propertyType?: string): HTMLDivElement {
-    const AUCTION_COLOR = '#DC2626';
-    const container = document.createElement('div');
-    container.style.cssText = `${MARKER_CONTAINER_STYLE.base} ${MARKER_ANCHOR.bottom}`;
-
-    const typeLabel = propertyType === 'land' ? '토지' : propertyType === 'factory' ? '공장' : propertyType === 'warehouse' ? '창고' : '';
-    const typeBadgeHTML = typeLabel ? `<span style="font-size: 8px; color: #64748B; padding: 1px 4px; background: #F1F5F9; border-radius: 2px;">${typeLabel}</span>` : '';
-
-    const failBadgeHTML = failCount !== undefined && failCount > 0 ? `
-        <div style="position: absolute; top: -8px; right: -8px; background: #DC2626; color: #fff; font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 10px; box-shadow: 0 2px 4px rgba(0,0,0,0.2); border: 2px solid #fff;">
-            ${failCount}회
-        </div>
+        <div style="font-size: 9px; color: #DC2626; font-weight: 600;">경매 ${formatPrice(auctionInfo.price)}${auctionInfo.failCount > 0 ? ` (${auctionInfo.failCount}회)` : ''}</div>
     ` : '';
 
     container.innerHTML = `
@@ -581,31 +536,63 @@ function createAuctionMarkerDOM(area: string, price: string, failCount?: number,
             position: relative;
             display: flex;
             flex-direction: column;
-            gap: 3px;
-            padding: 6px 9px;
-            background: #fff;
-            border-radius: 5px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-            border: 1.5px solid ${AUCTION_COLOR};
-            min-width: 70px;
+            align-items: center;
+            padding: 5px 8px;
+            background: ${LISTING_BG};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(37, 99, 235, 0.35);
+            border: 2px solid ${LISTING_COLOR};
         ">
-            ${failBadgeHTML}
-            <div style="display: flex; align-items: center; justify-content: space-between; gap: 4px;">
-                <span style="font-size: 10px; font-weight: 700; color: ${AUCTION_COLOR};">경매</span>
-                ${typeBadgeHTML}
+            <div style="display: flex; align-items: baseline; gap: 3px;">
+                <span style="font-size: 10px; color: ${LISTING_COLOR}; font-weight: 700;">${dealTypeLabel}</span>
+                <span style="font-weight: 800; font-size: 13px; color: #1E40AF;">${price}</span>
             </div>
-            <div style="font-weight: 800; font-size: 14px; color: #1F2937; line-height: 1;">${price}</div>
-            <div style="font-size: 9px; color: #9CA3AF; line-height: 1;">${area}</div>
+            <div style="font-size: 10px; color: #6B7280; font-weight: 500;">${area}</div>
+            ${auctionInfoHTML}
         </div>
-        ${createMarkerArrow('#fff', 6, AUCTION_COLOR)}
+        ${createMarkerArrow(LISTING_BG, 5, LISTING_COLOR)}
     `;
     return container;
 }
 
-// 실거래 마커 - 단순화된 스타일 (성능 최적화)
-// propertyType과 jibun을 조합하여 지목까지 표시
-// transactionDate: 최근 3개월 이내면 N 뱃지 표시
-// area: 면적(㎡), transactionDate: 거래일자 표시
+// 경매 마커 - 컴팩트 강조 디자인 (연분홍 배경)
+function createAuctionMarkerDOM(area: string, price: string, failCount?: number, propertyType?: string): HTMLDivElement {
+    const AUCTION_COLOR = '#DC2626';
+    const AUCTION_BG = '#FEF2F2';
+    const container = document.createElement('div');
+    container.style.cssText = `${MARKER_CONTAINER_STYLE.base} ${MARKER_ANCHOR.bottom}`;
+
+    // 유찰 횟수 표시 (있을 때만)
+    const failInfoHTML = failCount !== undefined && failCount > 0 ? `
+        <div style="font-size: 9px; color: #991B1B; font-weight: 600;">유찰 ${failCount}회</div>
+    ` : '';
+
+    container.innerHTML = `
+        <div style="
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 5px 8px;
+            background: ${AUCTION_BG};
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(220, 38, 38, 0.35);
+            border: 2px solid ${AUCTION_COLOR};
+        ">
+            <div style="display: flex; align-items: baseline; gap: 3px;">
+                <span style="font-size: 10px; color: ${AUCTION_COLOR}; font-weight: 700;">경매</span>
+                <span style="font-weight: 800; font-size: 13px; color: #991B1B;">${price}</span>
+            </div>
+            <div style="font-size: 10px; color: #6B7280; font-weight: 500;">${area}</div>
+            ${failInfoHTML}
+        </div>
+        ${createMarkerArrow(AUCTION_BG, 5, AUCTION_COLOR)}
+    `;
+    return container;
+}
+
+// 실거래 마커 - 심플 디자인 심플 디자인 (매물/경매보다 덜 강조)
+// 두 줄 레이아웃: 1줄 = 유형 + 가격, 2줄 = 날짜 + 평수
 function createTransactionMarkerDOM(
     price: string,
     propertyType?: string,
@@ -649,25 +636,33 @@ function createTransactionMarkerDOM(
 
     // 면적 표시 (평)
     const areaPyeong = area && area > 0 ? (area / SQM_PER_PYEONG).toFixed(0) : '';
-    const areaHTML = areaPyeong ? `<span style="font-size: 9px; color: #9CA3AF; margin-left: 3px;">${areaPyeong}평</span>` : '';
 
     // 거래일자 표시 (년.월)
-    let dateHTML = '';
+    let dateStr = '';
     if (transactionDate) {
         const txDate = new Date(transactionDate);
-        const year = txDate.getFullYear().toString().slice(2); // 2자리 연도
+        const year = txDate.getFullYear().toString().slice(2);
         const month = String(txDate.getMonth() + 1).padStart(2, '0');
-        dateHTML = `<span style="font-size: 9px; color: #9CA3AF; margin-left: 4px;">${year}.${month}</span>`;
+        dateStr = `${year}.${month}`;
     }
+
+    // 두 줄 레이아웃: 1줄 = 유형 + 가격, 2줄 = 날짜 + 평수
+    const secondLineHTML = (dateStr || areaPyeong) ? `
+        <div style="font-size: 9px; color: #9CA3AF; margin-top: 1px; display: flex; gap: 4px;">
+            ${dateStr ? `<span>${dateStr}</span>` : ''}
+            ${areaPyeong ? `<span>${areaPyeong}평</span>` : ''}
+        </div>
+    ` : '';
 
     // ⚡ 성능 최적화: 단일 레이어 구조 (backdrop-filter 제거)
     container.innerHTML = `
-        <div style="${getTransactionMarkerStyle()}; position: relative;">
+        <div style="${getTransactionMarkerStyle()}; position: relative; display: flex; flex-direction: column; align-items: center; line-height: 1.2;">
             ${newBadgeHTML}
-            ${typeLabelHTML}
-            <span style="font-weight: 500; font-size: ${fontSize.price}; color: ${color.price}; white-space: nowrap;">${price}</span>
-            ${areaHTML}
-            ${dateHTML}
+            <div style="display: flex; align-items: center; white-space: nowrap;">
+                ${typeLabelHTML}
+                <span style="font-weight: 500; font-size: ${fontSize.price}; color: ${color.price};">${price}</span>
+            </div>
+            ${secondLineHTML}
         </div>
     `;
     return container;

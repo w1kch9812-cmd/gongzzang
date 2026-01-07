@@ -5,7 +5,7 @@
 
 import { useMemo, memo, useState } from 'react';
 import { Paper, Title, Text, Group, Stack, SegmentedControl, SimpleGrid, ThemeIcon, Badge, Progress, Box, Divider, Tooltip } from '@mantine/core';
-import { IconCash, IconArrowDown, IconArrowUp, IconTrendingUp, IconTrendingDown, IconStar, IconGraph, IconPercentage, IconHome, IconGavel, IconChartAreaLine, IconMapPin } from '@tabler/icons-react';
+import { IconCash, IconArrowDown, IconArrowUp, IconTrendingUp, IconTrendingDown, IconStar, IconGraph, IconGavel } from '@tabler/icons-react';
 import { AreaChart, Area, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, ComposedChart, Line, ReferenceLine } from 'recharts';
 import { useFilteredParcels } from '@/lib/stores/filter-store';
 import { useDataStore } from '@/lib/stores/data-store';
@@ -108,15 +108,6 @@ export const PriceAnalysis = memo(function PriceAnalysis({ regionCode, regionLev
         return Math.round((stats.auction.avg / stats.transaction.avg) * 100);
     }, [stats]);
 
-    // 추정 임대 수익률 (더미)
-    const estimatedRentalYield = useMemo(() => {
-        const baseYield = 4 + Math.random() * 4; // 4-8%
-        return {
-            yield: baseYield.toFixed(1),
-            monthlyRent: Math.round((currentStats.avg * (baseYield / 100)) / 12),
-        };
-    }, [currentStats.avg]);
-
     // 더미 데이터
     const priceTrend = useMemo(() => generatePriceTrend(currentStats.avg || 50000), [currentStats.avg]);
     const regionComparison = useMemo(() => generateRegionComparison(currentRegionName), [currentRegionName]);
@@ -126,16 +117,88 @@ export const PriceAnalysis = memo(function PriceAnalysis({ regionCode, regionLev
         volumeChange: Math.round((Math.random() - 0.5) * 25 * 10) / 10,
     }), []);
 
-    const investmentScore = useMemo(() => {
-        const scores = {
-            priceCompetitiveness: Math.round(40 + Math.random() * 45), // 가격 경쟁력
-            liquidityScore: Math.round(35 + Math.random() * 50),       // 유동성
-            growthPotential: Math.round(45 + Math.random() * 40),      // 성장 잠재력
-            rentalYield: Math.round(50 + Math.random() * 35),          // 임대 수익성
+    // 지역 내 주요 매물 유형 파악
+    const dominantPropertyType = useMemo(() => {
+        const typeCounts = new Map<string, number>();
+        parcels.forEach(p => {
+            const type = p.propertyType || 'unknown';
+            typeCounts.set(type, (typeCounts.get(type) || 0) + 1);
+        });
+        let maxType = 'factory';
+        let maxCount = 0;
+        typeCounts.forEach((count, type) => {
+            if (count > maxCount) {
+                maxCount = count;
+                maxType = type;
+            }
+        });
+        return maxType;
+    }, [parcels]);
+
+    // 인천 전체 통계 (동일 매물 유형 기준 비교)
+    const incheonStats = useMemo(() => {
+        // 동일 매물 유형만 필터링
+        const sameTypeParcels = allParcels.filter(p => p.propertyType === dominantPropertyType || !dominantPropertyType);
+
+        const txParcels = sameTypeParcels.filter(p => p.type & 1 && p.transactionPrice && p.transactionPrice > 0);
+        const txPrices = txParcels.map(p => p.transactionPrice!);
+
+        // 평당가 계산 (면적 있는 것만)
+        const txWithArea = txParcels.filter(p => p.area && p.area > 0);
+        const avgPricePerPyeong = txWithArea.length > 0
+            ? txWithArea.reduce((sum, p) => sum + (p.transactionPrice! / (p.area! / 3.3058)), 0) / txWithArea.length
+            : 0;
+
+        return {
+            avgPrice: txPrices.length > 0 ? txPrices.reduce((a, b) => a + b, 0) / txPrices.length : 0,
+            avgPricePerPyeong,
+            totalCount: sameTypeParcels.length,
+            txCount: txPrices.length,
+            auctionCount: sameTypeParcels.filter(p => p.type & 4).length,
         };
-        const total = Math.round(Object.values(scores).reduce((a, b) => a + b) / 4);
-        return { ...scores, total };
-    }, []);
+    }, [allParcels, dominantPropertyType]);
+
+    // 지역 평당가 계산
+    const regionPricePerPyeong = useMemo(() => {
+        const txWithArea = parcels.filter(p =>
+            p.type & 1 && p.transactionPrice && p.transactionPrice > 0 && p.area && p.area > 0
+        );
+        if (txWithArea.length === 0) return 0;
+        return txWithArea.reduce((sum, p) => sum + (p.transactionPrice! / (p.area! / 3.3058)), 0) / txWithArea.length;
+    }, [parcels]);
+
+    // 투자 매력도 스코어링 (실제 데이터 기반)
+    const investmentScore = useMemo(() => {
+        // 1. 가격 경쟁력: 동일 유형 인천 평균 평당가 대비 현재 지역 평당가 비교
+        // 인천 평균보다 저렴하면 높은 점수
+        let priceCompetitiveness = 50;
+        if (incheonStats.avgPricePerPyeong > 0 && regionPricePerPyeong > 0) {
+            const priceRatio = regionPricePerPyeong / incheonStats.avgPricePerPyeong;
+            // 비율 0.7 → 80점, 1.0 → 50점, 1.3 → 20점
+            priceCompetitiveness = Math.round(Math.max(0, Math.min(100, 50 + (1 - priceRatio) * 100)));
+        }
+
+        // 2. 유동성: 전체 대비 해당 지역 거래 비중
+        let liquidityScore = 50;
+        if (incheonStats.txCount > 0 && stats.transaction.count > 0) {
+            const txRatio = stats.transaction.count / incheonStats.txCount;
+            // 인천 시군구가 약 10개이므로 1/10 = 10%가 평균
+            const avgRatio = 0.1;
+            liquidityScore = Math.round(Math.max(0, Math.min(100, 50 + (txRatio - avgRatio) * 300)));
+        }
+
+        // 3. 시장 안정성: 경매 비율 역산 (경매 적을수록 안정적 = 높은 점수)
+        let marketStability = 50;
+        const totalDeals = stats.transaction.count + stats.auction.count + stats.listing.count;
+        if (totalDeals > 0) {
+            const auctionRatio = stats.auction.count / totalDeals;
+            // 경매 비율 0% → 80점, 20% → 50점, 40% 이상 → 20점
+            marketStability = Math.round(Math.max(0, Math.min(100, 80 - auctionRatio * 150)));
+        }
+
+        const total = Math.round((priceCompetitiveness + liquidityScore + marketStability) / 3);
+        return { priceCompetitiveness, liquidityScore, marketStability, total };
+    }, [incheonStats, regionPricePerPyeong, stats]);
 
     const priceTypeLabel = priceType === 'transaction' ? '실거래가' : priceType === 'listing' ? '매물가' : '경매가';
     const formatPrice = (value: number) => value >= 10000 ? `${(value / 10000).toFixed(1)}억` : `${Math.round(value / 1000)}천만`;
@@ -194,33 +257,20 @@ export const PriceAnalysis = memo(function PriceAnalysis({ regionCode, regionLev
                 </Paper>
             </SimpleGrid>
 
-            {/* 경매 낙찰가율 & 임대 수익률 */}
-            <SimpleGrid cols={2}>
-                <Paper p="md" radius="md" withBorder bg="orange.0">
-                    <Group gap="xs" mb={8}>
-                        <ThemeIcon size="md" variant="light" color="orange" radius="md"><IconGavel size={18} /></ThemeIcon>
-                        <Text size="xs" fw={500} c="dimmed" tt="uppercase">경매 낙찰가율</Text>
-                    </Group>
-                    <Group gap={4} align="baseline">
-                        <Text size="xl" fw={700} c="orange.7">{auctionBidRate || 72}%</Text>
-                        <Text size="xs" c="dimmed">실거래가 대비</Text>
-                    </Group>
-                    <Text size="xs" c="dimmed" mt={4}>
-                        {auctionBidRate < 70 ? '⚡ 저가 매수 기회' : auctionBidRate < 80 ? '적정 수준' : '시세 근접'}
-                    </Text>
-                </Paper>
-                <Paper p="md" radius="md" withBorder bg="green.0">
-                    <Group gap="xs" mb={8}>
-                        <ThemeIcon size="md" variant="light" color="green" radius="md"><IconPercentage size={18} /></ThemeIcon>
-                        <Text size="xs" fw={500} c="dimmed" tt="uppercase">추정 임대수익률</Text>
-                    </Group>
-                    <Group gap={4} align="baseline">
-                        <Text size="xl" fw={700} c="green.7">{estimatedRentalYield.yield}%</Text>
-                        <Text size="xs" c="dimmed">연간</Text>
-                    </Group>
-                    <Text size="xs" c="dimmed" mt={4}>월 예상 임대료 약 {formatPrice(estimatedRentalYield.monthlyRent)}</Text>
-                </Paper>
-            </SimpleGrid>
+            {/* 경매 낙찰가율 */}
+            <Paper p="md" radius="md" withBorder bg="orange.0">
+                <Group gap="xs" mb={8}>
+                    <ThemeIcon size="md" variant="light" color="orange" radius="md"><IconGavel size={18} /></ThemeIcon>
+                    <Text size="xs" fw={500} c="dimmed" tt="uppercase">경매 낙찰가율</Text>
+                </Group>
+                <Group gap={4} align="baseline">
+                    <Text size="xl" fw={700} c="orange.7">{auctionBidRate || 72}%</Text>
+                    <Text size="xs" c="dimmed">실거래가 대비</Text>
+                </Group>
+                <Text size="xs" c="dimmed" mt={4}>
+                    {auctionBidRate < 70 ? '저가 매수 기회' : auctionBidRate < 80 ? '적정 수준' : '시세 근접'}
+                </Text>
+            </Paper>
 
             <Divider />
 
@@ -232,12 +282,11 @@ export const PriceAnalysis = memo(function PriceAnalysis({ regionCode, regionLev
                         <Group gap={4}><IconStar size={14} />{investmentScore.total}점</Group>
                     </Badge>
                 </Group>
-                <SimpleGrid cols={2} spacing="sm">
+                <SimpleGrid cols={3} spacing="sm">
                     {[
-                        { label: '가격 경쟁력', desc: '시세 대비 저평가 여부', score: investmentScore.priceCompetitiveness, color: 'blue' },
-                        { label: '유동성', desc: '거래 활발도', score: investmentScore.liquidityScore, color: 'cyan' },
-                        { label: '성장 잠재력', desc: '향후 가치 상승 기대', score: investmentScore.growthPotential, color: 'green' },
-                        { label: '임대 수익성', desc: '월세 수익 기대치', score: investmentScore.rentalYield, color: 'orange' },
+                        { label: '가격 경쟁력', desc: `동일 유형 인천 평균 평당가 대비 (${dominantPropertyType === 'factory' ? '공장' : dominantPropertyType === 'warehouse' ? '창고' : dominantPropertyType === 'land' ? '토지' : '지산'})`, score: investmentScore.priceCompetitiveness, color: 'blue' },
+                        { label: '유동성', desc: '인천 전체 대비 거래 비중', score: investmentScore.liquidityScore, color: 'cyan' },
+                        { label: '시장 안정성', desc: '경매 비율 낮을수록 안정', score: investmentScore.marketStability, color: 'green' },
                     ].map(({ label, desc, score, color }) => (
                         <Tooltip key={label} label={desc} position="top">
                             <Box>

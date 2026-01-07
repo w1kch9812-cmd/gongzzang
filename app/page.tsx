@@ -44,6 +44,18 @@ const AnalysisPanel = dynamic(
     { ssr: false }
 );
 
+// 비교 패널
+const ComparePanel = dynamic(
+    () => import('@/components/panel/ComparePanel'),
+    { ssr: false }
+);
+
+// 비교 선택 모달
+const CompareSelectModal = dynamic(
+    () => import('@/components/panel/CompareSelectModal'),
+    { ssr: false }
+);
+
 // 숨겨진 마커 토스트
 const HiddenMarkerToast = dynamic(
     () => import('@/components/map/HiddenMarkerToast'),
@@ -105,6 +117,12 @@ function HomePageContent() {
 
             {/* 지역 분석 패널 */}
             <AnalysisPanel />
+
+            {/* 비교 패널 */}
+            <ComparePanel />
+
+            {/* 비교 선택 모달 */}
+            <CompareSelectModal />
         </main>
     );
 }

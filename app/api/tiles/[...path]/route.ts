@@ -3,6 +3,7 @@
 // 참고: R2 CDN 사용 시 이 API는 사용되지 않음 (클라이언트에서 직접 R2 접근)
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logger } from '@/lib/utils/logger';
 
 // R2 CDN 사용 시 이 API는 비활성화
 const R2_BASE_URL = process.env.NEXT_PUBLIC_R2_URL || '';
@@ -86,7 +87,7 @@ function evictLRUCache() {
     const validEntries = entries.filter(([name, entry]) => {
         // TTL 초과 시 제거
         if (now - entry.lastAccess > CACHE_TTL) {
-            console.log(`🗑️ PMTiles 캐시 만료: ${name} (${(entry.size).toFixed(1)}MB)`);
+            logger.log(`🗑️ PMTiles 캐시 만료: ${name} (${(entry.size).toFixed(1)}MB)`);
             return false;
         }
         totalSize += entry.size;
@@ -108,7 +109,7 @@ function evictLRUCache() {
                 toKeep.unshift([name, entry]);
                 currentSize -= entry.size;
             } else {
-                console.log(`🗑️ PMTiles LRU 제거: ${name} (${(entry.size).toFixed(1)}MB)`);
+                logger.log(`🗑️ PMTiles LRU 제거: ${name} (${(entry.size).toFixed(1)}MB)`);
             }
         }
 
@@ -136,7 +137,7 @@ async function getPMTiles(name: string): Promise<{ pmtiles: any; compression: nu
         if (R2_BASE_URL) {
             // R2에서 PMTiles 로드 (FetchSource 사용) - 새 경로: /data/geometry/
             const url = `${R2_BASE_URL}/data/geometry/${name}.pmtiles`;
-            console.log(`📡 R2에서 PMTiles 로드: ${url}`);
+            logger.log(`📡 R2에서 PMTiles 로드: ${url}`);
 
             const source = new FetchSource(url);
             pmtiles = new PMTiles(source);
@@ -147,7 +148,7 @@ async function getPMTiles(name: string): Promise<{ pmtiles: any; compression: nu
             const filePath = join(process.cwd(), 'public', 'data', 'geometry', `${name}.pmtiles`);
 
             if (!existsSync(filePath)) {
-                console.error(`❌ PMTiles 파일 없음: ${filePath}`);
+                logger.error(`❌ PMTiles 파일 없음: ${filePath}`);
                 return null;
             }
 
@@ -174,11 +175,11 @@ async function getPMTiles(name: string): Promise<{ pmtiles: any; compression: nu
         };
         pmtilesCache.set(name, entry);
 
-        console.log(`📦 PMTiles 로드 완료: ${name}, minzoom: ${header.minZoom}, maxzoom: ${header.maxZoom}`);
+        logger.log(`📦 PMTiles 로드 완료: ${name}, minzoom: ${header.minZoom}, maxzoom: ${header.maxZoom}`);
 
         return { pmtiles, compression: header.tileCompression };
     } catch (e) {
-        console.error(`PMTiles 로드 실패 (${name}):`, e);
+        logger.error(`PMTiles 로드 실패 (${name}):`, e);
         return null;
     }
 }
@@ -217,7 +218,7 @@ export async function GET(
 
     const cached = await getPMTiles(name);
     if (!cached) {
-        console.error(`❌ PMTiles 없음: ${name}`);
+        logger.error(`❌ PMTiles 없음: ${name}`);
         return NextResponse.json({ error: 'PMTiles not found' }, { status: 404, headers: corsHeaders });
     }
 
@@ -256,7 +257,7 @@ export async function GET(
 
         return new NextResponse(new Uint8Array(data), { status: 200, headers });
     } catch (e) {
-        console.error(`❌ 타일 조회 실패 (${name}/${z}/${x}/${y}):`, e);
+        logger.error(`❌ 타일 조회 실패 (${name}/${z}/${x}/${y}):`, e);
         return new NextResponse(null, { status: 204, headers: corsHeaders });
     }
 }

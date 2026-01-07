@@ -5,7 +5,7 @@
 
 import { useMemo, memo } from 'react';
 import { Paper, Title, Text, Group, Stack, ThemeIcon, SimpleGrid, Badge, Box, Divider, Progress, ScrollArea, Tooltip, RingProgress } from '@mantine/core';
-import { IconBuildingFactory, IconCategory, IconRuler2, IconActivity, IconCalendar, IconTrendingUp, IconTrendingDown } from '@tabler/icons-react';
+import { IconBuildingFactory, IconCategory, IconCalendar } from '@tabler/icons-react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend, ResponsiveContainer } from 'recharts';
 import { useDataStore } from '@/lib/stores/data-store';
 
@@ -69,16 +69,28 @@ export const IndustryAnalysis = memo(function IndustryAnalysis({ regionCode, reg
         return factories.filter(f => f.name).slice(0, 10).map(f => ({ name: f.name, businessType: f.businessType || '미분류' }));
     }, [factories]);
 
-    // 산업 집적도
+    // 산업 집적도 (실제 데이터 기반)
     const industryConcentration = useMemo(() => {
-        const score = Math.round(50 + Math.random() * 30);
-        return { score, level: score >= 75 ? '높음' : score >= 50 ? '보통' : '낮음', color: score >= 75 ? 'green' : score >= 50 ? 'yellow' : 'red' };
-    }, []);
+        // 인천 전체 공장 대비 현재 지역 공장 비율로 집적도 계산
+        // 인천 시군구가 약 10개이므로, 10% 이상이면 집적도 높음
+        const totalFactories = allFactories.length || 1;
+        const regionRatio = factories.length / totalFactories;
 
-    // 가동률 & 노후도 (더미)
-    const operationStats = useMemo(() => {
+        // 비율을 점수로 변환: 10% → 50점, 20% → 75점, 5% → 25점
+        // 선형 변환: score = 50 + (regionRatio - 0.1) * 250
+        const score = Math.round(Math.max(0, Math.min(100, 50 + (regionRatio - 0.1) * 250)));
+
         return {
-            operationRate: Math.round(70 + Math.random() * 25), // 가동률 70-95%
+            score,
+            level: score >= 70 ? '높음' : score >= 40 ? '보통' : '낮음',
+            color: score >= 70 ? 'green' : score >= 40 ? 'yellow' : 'red',
+            ratio: (regionRatio * 100).toFixed(1), // UI 표시용
+        };
+    }, [allFactories.length, factories.length]);
+
+    // 건물 연령 (더미 - 건축물대장 API로 대체 가능)
+    const buildingStats = useMemo(() => {
+        return {
             avgAge: Math.round(10 + Math.random() * 20), // 평균 건물 연령
             newRatio: Math.round(10 + Math.random() * 20), // 신축(5년 이내) 비율
             oldRatio: Math.round(15 + Math.random() * 25), // 노후(20년 이상) 비율
@@ -109,7 +121,7 @@ export const IndustryAnalysis = memo(function IndustryAnalysis({ regionCode, reg
             <Title order={3}>산업 분석</Title>
 
             {/* 기본 통계 */}
-            <SimpleGrid cols={2}>
+            <SimpleGrid cols={3}>
                 <Paper p="md" radius="md" withBorder>
                     <Group gap="xs" mb={8}>
                         <ThemeIcon size="md" variant="light" color="blue" radius="md"><IconBuildingFactory size={18} /></ThemeIcon>
@@ -126,33 +138,21 @@ export const IndustryAnalysis = memo(function IndustryAnalysis({ regionCode, reg
                 </Paper>
                 <Paper p="md" radius="md" withBorder>
                     <Group gap="xs" mb={8}>
-                        <ThemeIcon size="md" variant="light" color="orange" radius="md"><IconActivity size={18} /></ThemeIcon>
-                        <Text size="xs" fw={500} c="dimmed" tt="uppercase">가동률</Text>
-                    </Group>
-                    <Group gap={4} align="baseline">
-                        <Text size="xl" fw={700}>{operationStats.operationRate}%</Text>
-                        <Badge size="sm" color={operationStats.operationRate >= 85 ? 'green' : operationStats.operationRate >= 70 ? 'yellow' : 'red'} variant="light">
-                            {operationStats.operationRate >= 85 ? '양호' : operationStats.operationRate >= 70 ? '보통' : '저조'}
-                        </Badge>
-                    </Group>
-                </Paper>
-                <Paper p="md" radius="md" withBorder>
-                    <Group gap="xs" mb={8}>
                         <ThemeIcon size="md" variant="light" color="violet" radius="md"><IconCalendar size={18} /></ThemeIcon>
                         <Text size="xs" fw={500} c="dimmed" tt="uppercase">평균 건물 연령</Text>
                     </Group>
-                    <Text size="xl" fw={700}>{operationStats.avgAge}년</Text>
+                    <Text size="xl" fw={700}>{buildingStats.avgAge}년</Text>
                 </Paper>
             </SimpleGrid>
 
-            {/* 산업 집적도 & 노후도 */}
+            {/* 산업 집적도 & 건물 현황 */}
             <Paper p="lg" radius="md" withBorder>
                 <Group justify="space-between" mb="md">
                     <Title order={5}>산업 집적도 & 건물 현황</Title>
                     <Badge size="lg" color={industryConcentration.color} variant="light">{industryConcentration.level}</Badge>
                 </Group>
-                <SimpleGrid cols={2} spacing="md">
-                    <Tooltip label="지역 내 동종업계 밀집도">
+                <SimpleGrid cols={3} spacing="md">
+                    <Tooltip label={`인천 전체 공장의 ${industryConcentration.ratio}%가 이 지역에 위치`}>
                         <Box>
                             <Group justify="space-between" mb={4}>
                                 <Text size="xs" c="dimmed">집적도 점수</Text>
@@ -165,27 +165,18 @@ export const IndustryAnalysis = memo(function IndustryAnalysis({ regionCode, reg
                         <Box>
                             <Group justify="space-between" mb={4}>
                                 <Text size="xs" c="dimmed">신축 비율</Text>
-                                <Text size="xs" fw={600} c="green">{operationStats.newRatio}%</Text>
+                                <Text size="xs" fw={600} c="green">{buildingStats.newRatio}%</Text>
                             </Group>
-                            <Progress value={operationStats.newRatio} color="green" size="lg" radius="xl" />
-                        </Box>
-                    </Tooltip>
-                    <Tooltip label="가동 중인 공장 비율">
-                        <Box>
-                            <Group justify="space-between" mb={4}>
-                                <Text size="xs" c="dimmed">가동률</Text>
-                                <Text size="xs" fw={600}>{operationStats.operationRate}%</Text>
-                            </Group>
-                            <Progress value={operationStats.operationRate} color="blue" size="lg" radius="xl" />
+                            <Progress value={buildingStats.newRatio} color="green" size="lg" radius="xl" />
                         </Box>
                     </Tooltip>
                     <Tooltip label="20년 이상 노후 건물 비율 (재개발 수요 예측)">
                         <Box>
                             <Group justify="space-between" mb={4}>
                                 <Text size="xs" c="dimmed">노후 비율</Text>
-                                <Text size="xs" fw={600} c="orange">{operationStats.oldRatio}%</Text>
+                                <Text size="xs" fw={600} c="orange">{buildingStats.oldRatio}%</Text>
                             </Group>
-                            <Progress value={operationStats.oldRatio} color="orange" size="lg" radius="xl" />
+                            <Progress value={buildingStats.oldRatio} color="orange" size="lg" radius="xl" />
                         </Box>
                     </Tooltip>
                 </SimpleGrid>
@@ -327,7 +318,7 @@ export const IndustryAnalysis = memo(function IndustryAnalysis({ regionCode, reg
             )}
 
             <Paper p="sm" radius="md" bg="gray.0">
-                <Text size="xs" c="dimmed" ta="center" fw={500}>* 가동률, 노후도, 면적 구성 등은 시뮬레이션 데이터입니다</Text>
+                <Text size="xs" c="dimmed" ta="center" fw={500}>* 건물 연령, 면적 구성 등은 시뮬레이션 데이터입니다</Text>
             </Paper>
         </Stack>
     );

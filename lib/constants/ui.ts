@@ -11,6 +11,11 @@
 export const SIDE_PANEL_WIDTH = 400;
 
 /**
+ * 비교 패널 폭
+ */
+export const COMPARE_PANEL_WIDTH = 380;
+
+/**
  * 사이드 패널 전환 애니메이션 시간 (ms)
  */
 export const SIDE_PANEL_TRANSITION_DURATION = 300;

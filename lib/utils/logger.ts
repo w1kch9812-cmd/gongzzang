@@ -6,8 +6,7 @@ const isDev = process.env.NODE_ENV === 'development';
 export const logger = {
     /** 일반 로그 (개발 환경에서만 출력) */
     log: (...args: unknown[]) => {
-        // 임시: 프로덕션에서도 로그 출력 (디버깅용)
-        console.log(...args);
+        if (isDev) console.log(...args);
     },
 
     /** 정보 로그 (개발 환경에서만 출력) */

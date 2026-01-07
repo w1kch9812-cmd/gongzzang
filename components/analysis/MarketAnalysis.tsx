@@ -5,8 +5,8 @@
 
 import { useMemo, memo } from 'react';
 import { Paper, Title, Text, Group, Stack, SimpleGrid, Progress, Badge, ThemeIcon, Box, Divider, RingProgress, Tooltip } from '@mantine/core';
-import { IconShoppingCart, IconHammer, IconChartBar, IconHome, IconTrendingUp, IconTrendingDown, IconAlertTriangle, IconClock, IconBuilding, IconBuildingFactory2, IconUsers } from '@tabler/icons-react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, LineChart, Line, ComposedChart, Area, Legend } from 'recharts';
+import { IconShoppingCart, IconHammer, IconHome, IconTrendingUp, IconTrendingDown, IconAlertTriangle, IconBuildingFactory2 } from '@tabler/icons-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, ResponsiveContainer, ComposedChart, Line, Legend } from 'recharts';
 import { useFilteredParcels } from '@/lib/stores/filter-store';
 import { useDataStore } from '@/lib/stores/data-store';
 import { getListings, getAuctions, getTransactions } from '@/lib/utils/dataHelpers';
@@ -82,22 +82,6 @@ export const MarketAnalysis = memo(function MarketAnalysis({ regionCode, regionL
         };
     }, [parcels]);
 
-    // 경매 유찰 통계
-    const auctionStats = useMemo(() => {
-        const auctions = getAuctions(parcels);
-        if (auctions.length === 0) return null;
-
-        const distribution = [
-            { label: '신건', count: Math.floor(auctions.length * 0.3), color: '#40c057' },
-            { label: '1회', count: Math.floor(auctions.length * 0.25), color: '#228be6' },
-            { label: '2회', count: Math.floor(auctions.length * 0.2), color: '#fab005' },
-            { label: '3회', count: Math.floor(auctions.length * 0.15), color: '#fd7e14' },
-            { label: '4회+', count: Math.floor(auctions.length * 0.1), color: '#fa5252' },
-        ].filter(d => d.count > 0);
-
-        return { total: auctions.length, distribution };
-    }, [parcels]);
-
     // 거래 유형 분포
     const typeDistribution = useMemo(() => {
         const total = marketStats.totalListings + marketStats.totalAuctions + marketStats.totalTransactions;
@@ -114,17 +98,34 @@ export const MarketAnalysis = memo(function MarketAnalysis({ regionCode, regionL
     const auctionTrend = useMemo(() => generateAuctionTrend(), []);
     const factoryTrend = useMemo(() => generateFactoryTrend(), []);
 
-    // 시장 위험도 지표 (더미)
+    // 인천 전체 경매 건수
+    const incheonAuctionCount = useMemo(() => {
+        return allParcels.filter(p => p.type & 4).length;
+    }, [allParcels]);
+
+    // 시장 위험도 지표 (실제 데이터 기반)
     const marketRisk = useMemo(() => {
-        const auctionGrowth = Math.round((Math.random() - 0.3) * 40); // 경매 건수 증감률
-        const vacancyRate = Math.round(5 + Math.random() * 15); // 공실률
-        const avgHoldingPeriod = Math.round(24 + Math.random() * 36); // 평균 보유기간 (개월)
-        const ownerOccupiedRate = Math.round(55 + Math.random() * 30); // 자가 비율
+        // 경매 비율: 해당 지역의 전체 물건 대비 경매 비율
+        const totalItems = marketStats.totalListings + marketStats.totalAuctions + marketStats.totalTransactions;
+        const auctionRatio = totalItems > 0 ? (marketStats.totalAuctions / totalItems) * 100 : 0;
 
-        const riskLevel = auctionGrowth > 20 || vacancyRate > 15 ? 'high' : auctionGrowth > 0 || vacancyRate > 10 ? 'medium' : 'low';
+        // 인천 평균 경매 비율 대비 비교
+        const incheonTotal = allParcels.length || 1;
+        const incheonAuctionRatio = (incheonAuctionCount / incheonTotal) * 100;
 
-        return { auctionGrowth, vacancyRate, avgHoldingPeriod, ownerOccupiedRate, riskLevel };
-    }, []);
+        // 지역 경매 비율이 인천 평균보다 높으면 위험
+        const ratioDiff = auctionRatio - incheonAuctionRatio;
+
+        // ratioDiff > 10 → high, 0~10 → medium, < 0 → low
+        const riskLevel = ratioDiff > 10 ? 'high' : ratioDiff > 0 ? 'medium' : 'low';
+
+        return {
+            auctionRatio: Math.round(auctionRatio * 10) / 10,
+            incheonAvgRatio: Math.round(incheonAuctionRatio * 10) / 10,
+            ratioDiff: Math.round(ratioDiff * 10) / 10,
+            riskLevel,
+        };
+    }, [marketStats, allParcels.length, incheonAuctionCount]);
 
     const formatPrice = (value: number) => value >= 10000 ? `${(value / 10000).toFixed(1)}억` : value >= 1000 ? `${(value / 1000).toFixed(1)}천만` : `${value}만원`;
 
@@ -170,60 +171,48 @@ export const MarketAnalysis = memo(function MarketAnalysis({ regionCode, regionL
                 </Paper>
             </SimpleGrid>
 
-            {/* 시장 위험도 지표 */}
+            {/* 경매 비율 (인천 평균 대비) */}
             <Paper p="lg" radius="md" withBorder bg={marketRisk.riskLevel === 'high' ? 'red.0' : marketRisk.riskLevel === 'medium' ? 'yellow.0' : 'green.0'}>
                 <Group justify="space-between" mb="md">
                     <Group gap="sm">
                         <ThemeIcon size="md" variant="light" color={marketRisk.riskLevel === 'high' ? 'red' : marketRisk.riskLevel === 'medium' ? 'yellow' : 'green'} radius="md">
                             <IconAlertTriangle size={18} />
                         </ThemeIcon>
-                        <Title order={5}>시장 위험도</Title>
+                        <Title order={5}>경매 동향</Title>
                     </Group>
                     <Badge size="lg" color={marketRisk.riskLevel === 'high' ? 'red' : marketRisk.riskLevel === 'medium' ? 'yellow' : 'green'} variant="filled">
                         {marketRisk.riskLevel === 'high' ? '주의' : marketRisk.riskLevel === 'medium' ? '보통' : '양호'}
                     </Badge>
                 </Group>
                 <SimpleGrid cols={2} spacing="md">
-                    <Tooltip label="경매 건수 증가는 부실 채권 증가 신호">
+                    <Tooltip label="해당 지역 전체 물건 중 경매 비율">
                         <Box>
                             <Group justify="space-between" mb={4}>
-                                <Text size="xs" c="dimmed">경매 건수 증감률</Text>
-                                <Group gap={4}>
-                                    {marketRisk.auctionGrowth > 0 ? <IconTrendingUp size={12} color="#fa5252" /> : <IconTrendingDown size={12} color="#40c057" />}
-                                    <Text size="xs" fw={600} c={marketRisk.auctionGrowth > 0 ? 'red' : 'green'}>{marketRisk.auctionGrowth > 0 ? '+' : ''}{marketRisk.auctionGrowth}%</Text>
-                                </Group>
+                                <Text size="xs" c="dimmed">지역 경매 비율</Text>
+                                <Text size="xs" fw={600} c={marketRisk.auctionRatio > marketRisk.incheonAvgRatio ? 'red' : 'green'}>
+                                    {marketRisk.auctionRatio}%
+                                </Text>
                             </Group>
-                            <Progress value={Math.abs(marketRisk.auctionGrowth)} color={marketRisk.auctionGrowth > 20 ? 'red' : marketRisk.auctionGrowth > 0 ? 'yellow' : 'green'} size="sm" radius="xl" />
+                            <Progress value={Math.min(marketRisk.auctionRatio, 100)} color={marketRisk.riskLevel === 'high' ? 'red' : marketRisk.riskLevel === 'medium' ? 'yellow' : 'green'} size="sm" radius="xl" />
                         </Box>
                     </Tooltip>
-                    <Tooltip label="임차 수요 대비 공급 과잉 여부">
+                    <Tooltip label="인천 전체 평균 경매 비율">
                         <Box>
                             <Group justify="space-between" mb={4}>
-                                <Text size="xs" c="dimmed">공실률</Text>
-                                <Text size="xs" fw={600} c={marketRisk.vacancyRate > 15 ? 'red' : marketRisk.vacancyRate > 10 ? 'yellow' : 'green'}>{marketRisk.vacancyRate}%</Text>
+                                <Text size="xs" c="dimmed">인천 평균</Text>
+                                <Text size="xs" fw={600} c="dimmed">{marketRisk.incheonAvgRatio}%</Text>
                             </Group>
-                            <Progress value={marketRisk.vacancyRate} color={marketRisk.vacancyRate > 15 ? 'red' : marketRisk.vacancyRate > 10 ? 'yellow' : 'green'} size="sm" radius="xl" />
-                        </Box>
-                    </Tooltip>
-                    <Tooltip label="손바뀜 빈도 (투기성 자본 유입 여부)">
-                        <Box>
-                            <Group justify="space-between" mb={4}>
-                                <Text size="xs" c="dimmed">평균 보유기간</Text>
-                                <Text size="xs" fw={600}>{marketRisk.avgHoldingPeriod}개월</Text>
-                            </Group>
-                            <Progress value={(marketRisk.avgHoldingPeriod / 60) * 100} color="blue" size="sm" radius="xl" />
-                        </Box>
-                    </Tooltip>
-                    <Tooltip label="자가 소유 vs 임대 수익형">
-                        <Box>
-                            <Group justify="space-between" mb={4}>
-                                <Text size="xs" c="dimmed">자가 비율</Text>
-                                <Text size="xs" fw={600}>{marketRisk.ownerOccupiedRate}%</Text>
-                            </Group>
-                            <Progress value={marketRisk.ownerOccupiedRate} color="cyan" size="sm" radius="xl" />
+                            <Progress value={Math.min(marketRisk.incheonAvgRatio, 100)} color="gray" size="sm" radius="xl" />
                         </Box>
                     </Tooltip>
                 </SimpleGrid>
+                <Text size="xs" c="dimmed" ta="center" mt="md">
+                    {marketRisk.ratioDiff > 0
+                        ? `인천 평균 대비 +${marketRisk.ratioDiff}%p 높음`
+                        : marketRisk.ratioDiff < 0
+                            ? `인천 평균 대비 ${marketRisk.ratioDiff}%p 낮음`
+                            : '인천 평균과 동일'}
+                </Text>
             </Paper>
 
             <Divider />
@@ -275,36 +264,6 @@ export const MarketAnalysis = memo(function MarketAnalysis({ regionCode, regionL
                 </ResponsiveContainer>
             </Paper>
 
-            {/* 경매 건수 증감 추이 */}
-            {auctionStats && auctionStats.total > 0 && (
-                <Paper p="lg" radius="md" withBorder>
-                    <Group justify="space-between" mb="md">
-                        <Title order={5}>경매 유찰 현황</Title>
-                        <Badge color="red" variant="light">총 {auctionStats.total}건</Badge>
-                    </Group>
-                    <Group align="flex-start" gap="xl">
-                        <RingProgress
-                            size={120}
-                            thickness={16}
-                            roundCaps
-                            sections={auctionStats.distribution.map(d => ({ value: (d.count / auctionStats.total) * 100, color: d.color, tooltip: `${d.label}: ${d.count}건` }))}
-                            label={<Text ta="center" size="sm" fw={600}>유찰</Text>}
-                        />
-                        <Stack gap="xs" style={{ flex: 1 }}>
-                            {auctionStats.distribution.map((d) => (
-                                <Group key={d.label} justify="space-between">
-                                    <Group gap={6}>
-                                        <Box w={8} h={8} style={{ backgroundColor: d.color, borderRadius: '50%' }} />
-                                        <Text size="sm">{d.label} 유찰</Text>
-                                    </Group>
-                                    <Text size="sm" fw={600}>{d.count}건</Text>
-                                </Group>
-                            ))}
-                        </Stack>
-                    </Group>
-                </Paper>
-            )}
-
             {/* 공장 등록/폐업 추이 */}
             <Paper p="lg" radius="md" withBorder>
                 <Group justify="space-between" mb="md">
@@ -325,7 +284,7 @@ export const MarketAnalysis = memo(function MarketAnalysis({ regionCode, regionL
             </Paper>
 
             <Paper p="sm" radius="md" bg="gray.0">
-                <Text size="xs" c="dimmed" ta="center" fw={500}>* 공실률, 보유기간, 등록/폐업 추이 등은 시뮬레이션 데이터입니다</Text>
+                <Text size="xs" c="dimmed" ta="center" fw={500}>* 거래량 추이, 등록/폐업 추이 등은 시뮬레이션 데이터입니다</Text>
             </Paper>
         </Stack>
     );

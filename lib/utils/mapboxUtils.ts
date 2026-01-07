@@ -1,5 +1,7 @@
 // lib/utils/mapboxUtils.ts - Mapbox GL 접근 유틸리티 (Single Source of Truth)
 
+import { logger } from './logger';
+
 /** Mapbox GL 인스턴스 타입 (간략화) */
 export interface MapboxGLInstance {
     getCanvas: () => HTMLCanvasElement;
@@ -56,7 +58,7 @@ export async function waitForMapboxGL(
         mbMap = getMapboxGL(naverMap);
         if (mbMap) break;
         if (i % 10 === 0) {
-            console.log(`⏳ [waitForMapboxGL] 인스턴스 대기 ${i}/50`);
+            logger.log(`⏳ [waitForMapboxGL] 인스턴스 대기 ${i}/50`);
         }
         await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -69,11 +71,11 @@ export async function waitForMapboxGL(
     for (let i = 0; i < 100; i++) {
         const isLoaded = (mbMap as any).isStyleLoaded?.();
         if (isLoaded === true) {
-            console.log('✅ [waitForMapboxGL] 스타일 로드 완료');
+            logger.log('✅ [waitForMapboxGL] 스타일 로드 완료');
             return mbMap;
         }
         if (i % 10 === 0) {
-            console.log(`⏳ [waitForMapboxGL] 스타일 로드 대기 ${i}/100`);
+            logger.log(`⏳ [waitForMapboxGL] 스타일 로드 대기 ${i}/100`);
         }
         await new Promise(resolve => setTimeout(resolve, delay));
     }
@@ -165,7 +167,7 @@ export function addSourceSafely(
             return true;
         }
     } catch (e) {
-        console.warn(`소스 추가 실패 (${id}):`, e);
+        logger.warn(`소스 추가 실패 (${id}):`, e);
     }
     return false;
 }
@@ -183,7 +185,7 @@ export function addLayerSafely(
             return true;
         }
     } catch (e) {
-        console.warn(`레이어 추가 실패 (${config.id}):`, e);
+        logger.warn(`레이어 추가 실패 (${config.id}):`, e);
     }
     return false;
 }
@@ -222,7 +224,7 @@ export function getMapboxMarkerClass(mbMap: MapboxGLInstance): MapboxMarkerClass
     // 방법 1: 전역 mapboxgl에서 찾기 (가장 일반적)
     if (typeof window !== 'undefined' && window.mapboxgl?.Marker) {
         cachedMarkerClass = window.mapboxgl.Marker;
-        console.log('✅ [Marker] 전역 mapboxgl.Marker 사용');
+        logger.log('✅ [Marker] 전역 mapboxgl.Marker 사용');
         return cachedMarkerClass;
     }
 
@@ -230,7 +232,7 @@ export function getMapboxMarkerClass(mbMap: MapboxGLInstance): MapboxMarkerClass
     const constructor = (mbMap as any).constructor;
     if (constructor?.Marker) {
         cachedMarkerClass = constructor.Marker;
-        console.log('✅ [Marker] constructor.Marker 사용');
+        logger.log('✅ [Marker] constructor.Marker 사용');
         return cachedMarkerClass;
     }
 
@@ -238,7 +240,7 @@ export function getMapboxMarkerClass(mbMap: MapboxGLInstance): MapboxMarkerClass
     const proto = Object.getPrototypeOf(mbMap);
     if (proto?.constructor?.Marker) {
         cachedMarkerClass = proto.constructor.Marker;
-        console.log('✅ [Marker] proto.constructor.Marker 사용');
+        logger.log('✅ [Marker] proto.constructor.Marker 사용');
         return cachedMarkerClass;
     }
 
@@ -246,11 +248,11 @@ export function getMapboxMarkerClass(mbMap: MapboxGLInstance): MapboxMarkerClass
     const mapboxgl = (mbMap as any)._mapboxgl || (mbMap as any).mapboxgl;
     if (mapboxgl?.Marker) {
         cachedMarkerClass = mapboxgl.Marker;
-        console.log('✅ [Marker] _mapboxgl.Marker 사용');
+        logger.log('✅ [Marker] _mapboxgl.Marker 사용');
         return cachedMarkerClass;
     }
 
-    console.warn('⚠️ [Marker] Mapbox Marker 클래스를 찾을 수 없음, fallback 사용');
+    logger.warn('⚠️ [Marker] Mapbox Marker 클래스를 찾을 수 없음, fallback 사용');
     return null;
 }
 
@@ -271,7 +273,7 @@ export function createMapboxMarker(
                 .setLngLat(lngLat)
                 .addTo(mbMap);
         } catch (e) {
-            console.warn('Mapbox Marker 생성 실패:', e);
+            logger.warn('Mapbox Marker 생성 실패:', e);
         }
     }
 

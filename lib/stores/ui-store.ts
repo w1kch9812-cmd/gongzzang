@@ -43,6 +43,12 @@ interface UIState {
     // 좌측 사이드 패널 (DetailPanel, AnalysisPanel 통합 관리)
     activeSidePanel: 'detail' | 'analysis' | null;
 
+    // 비교 패널
+    comparePanelOpen: boolean;
+
+    // 비교 선택 모달
+    compareSelectModalOpen: boolean;
+
     // 분석 모달
     analysisModalOpen: boolean;
     analysisTarget: { level: 'sig' | 'emd'; code: string; name: string } | null;
@@ -79,6 +85,15 @@ interface UIActions {
     closeSidePanel: () => void;
     toggleSidePanel: (panel: 'detail' | 'analysis') => void;
 
+    // 비교 패널 제어
+    openComparePanel: () => void;
+    closeComparePanel: () => void;
+    toggleComparePanel: () => void;
+
+    // 비교 선택 모달 제어
+    openCompareSelectModal: () => void;
+    closeCompareSelectModal: () => void;
+
     setAnalysisModalOpen: (open: boolean) => void;
     setAnalysisTarget: (target: { level: 'sig' | 'emd'; code: string; name: string } | null) => void;
     openAnalysisModal: (level: 'sig' | 'emd', code: string, name: string) => void;
@@ -113,6 +128,10 @@ export const useUIStore = create<UIStore>()(
         rightSidebarWidth: 48,
 
         activeSidePanel: null,
+
+        comparePanelOpen: false,
+
+        compareSelectModalOpen: false,
 
         analysisModalOpen: false,
         analysisTarget: null,
@@ -167,6 +186,15 @@ export const useUIStore = create<UIStore>()(
             activeSidePanel: state.activeSidePanel === panel ? null : panel,
         })),
 
+        // 비교 패널 제어
+        openComparePanel: () => set({ comparePanelOpen: true }),
+        closeComparePanel: () => set({ comparePanelOpen: false }),
+        toggleComparePanel: () => set((state) => ({ comparePanelOpen: !state.comparePanelOpen })),
+
+        // 비교 선택 모달 제어
+        openCompareSelectModal: () => set({ compareSelectModalOpen: true }),
+        closeCompareSelectModal: () => set({ compareSelectModalOpen: false }),
+
         setAnalysisModalOpen: (open) => set({ analysisModalOpen: open }),
         setAnalysisTarget: (target) => set({ analysisTarget: target }),
         openAnalysisModal: (level, code, name) => set({
@@ -185,6 +213,27 @@ export const useUIStore = create<UIStore>()(
 export const useVisibleLayers = () => useUIStore((state) => state.visibleLayers);
 
 export const useActiveSidePanel = () => useUIStore((state) => state.activeSidePanel);
+
+export const useComparePanelOpen = () => useUIStore((state) => state.comparePanelOpen);
+
+export const useComparePanelActions = () =>
+    useUIStore(
+        useShallow((state) => ({
+            openComparePanel: state.openComparePanel,
+            closeComparePanel: state.closeComparePanel,
+            toggleComparePanel: state.toggleComparePanel,
+        }))
+    );
+
+export const useCompareSelectModalOpen = () => useUIStore((state) => state.compareSelectModalOpen);
+
+export const useCompareSelectModalActions = () =>
+    useUIStore(
+        useShallow((state) => ({
+            openCompareSelectModal: state.openCompareSelectModal,
+            closeCompareSelectModal: state.closeCompareSelectModal,
+        }))
+    );
 
 export const useSidePanelActions = () =>
     useUIStore(
