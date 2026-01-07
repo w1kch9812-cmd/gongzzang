@@ -1,5 +1,5 @@
 // lib/map/CanvasMarkerRenderer.ts
-// Canvas 기반 고성능 마커 렌더링 (Mapbox GL Custom Layer)
+// Canvas Source 기반 고성능 마커 렌더링 (Mapbox GL 지도 내부 통합)
 
 import type { Map as MapboxMap } from 'mapbox-gl';
 
@@ -12,7 +12,7 @@ export interface CanvasMarker {
     // 표시 내용 (다중 텍스트 지원)
     text: string;
     subtext?: string;
-    subtext2?: string;  // 3줄 텍스트 지원
+    subtext2?: string;
     icon?: string;
 
     // 스타일
@@ -45,10 +45,15 @@ export class CanvasMarkerRenderer {
     private ctx: CanvasRenderingContext2D;
     private markers: Map<string, CanvasMarker> = new Map();
     private map: MapboxMap | null = null;
+    private sourceId = 'canvas-markers-source';
+    private layerId = 'canvas-markers-layer';
     private needsRedraw = true;
 
-    // 클릭 감지용 (픽셀 → 마커 ID 매핑)
+    // 히트맵 (클릭 감지용)
     private hitMap: Map<string, string> = new Map(); // "x,y" → markerId
+
+    // 지도 영역 (Canvas 매핑용)
+    private bounds: { west: number; east: number; north: number; south: number } | null = null;
 
     // 이벤트 핸들러
     private onMarkerClick?: (markerId: string, marker: CanvasMarker) => void;
@@ -56,92 +61,210 @@ export class CanvasMarkerRenderer {
     private hoveredMarkerId: string | null = null;
 
     constructor() {
+        // Canvas 생성 (크기는 고정, 해상도 중요)
         this.canvas = document.createElement('canvas');
+        this.canvas.width = 2048;
+        this.canvas.height = 2048;
+
         this.ctx = this.canvas.getContext('2d', {
             alpha: true,
-            desynchronized: true // 성능 향상
+            desynchronized: true
         })!;
 
-        // 고해상도 디스플레이 지원
-        const dpr = window.devicePixelRatio || 1;
-        this.canvas.style.width = '100%';
-        this.canvas.style.height = '100%';
+        console.log('[CanvasSource] Canvas 생성:', this.canvas.width, 'x', this.canvas.height);
     }
 
-    /** Mapbox GL Custom Layer 인터페이스 */
-    getLayer(layerId: string = 'canvas-markers') {
-        const self = this;
+    /** 지도에 Canvas Source 추가 */
+    addToMap(map: MapboxMap) {
+        this.map = map;
 
-        return {
-            id: layerId,
-            type: 'custom' as const,
-            renderingMode: '2d' as const,
+        // 현재 지도 영역 저장
+        this.updateBounds();
 
-            onAdd(map: MapboxMap, gl: WebGLRenderingContext) {
-                self.map = map;
-                self.setupEventListeners();
-            },
+        // Canvas Source 등록
+        if (!map.getSource(this.sourceId)) {
+            map.addSource(this.sourceId, {
+                type: 'canvas',
+                canvas: this.canvas,
+                coordinates: this.getCoordinates(),
+                animate: true // Canvas 변경 시 자동 업데이트
+            });
+            console.log('[CanvasSource] Source 추가됨');
+        }
 
-            render(gl: WebGLRenderingContext, matrix: number[]) {
-                if (!self.map || !self.needsRedraw) return;
-
-                const perfStart = performance.now();
-
-                // Canvas 크기 조정
-                const mapCanvas = self.map.getCanvas();
-                const dpr = window.devicePixelRatio || 1;
-
-                if (self.canvas.width !== mapCanvas.width * dpr ||
-                    self.canvas.height !== mapCanvas.height * dpr) {
-                    self.canvas.width = mapCanvas.width * dpr;
-                    self.canvas.height = mapCanvas.height * dpr;
-                    self.ctx.scale(dpr, dpr);
+        // Raster 레이어 추가 (WebGL로 렌더링됨!)
+        if (!map.getLayer(this.layerId)) {
+            map.addLayer({
+                id: this.layerId,
+                type: 'raster',
+                source: this.sourceId,
+                paint: {
+                    'raster-opacity': 1
                 }
+            });
+            console.log('[CanvasSource] Layer 추가됨');
+        }
 
-                // 지우기
-                self.ctx.clearRect(0, 0, self.canvas.width, self.canvas.height);
-                self.hitMap.clear();
+        // 지도 이벤트 리스너
+        this.setupMapListeners();
+    }
 
-                // 모든 마커 렌더링
-                self.markers.forEach(marker => {
-                    self.drawMarker(marker);
-                });
+    /** 현재 지도 영역 업데이트 */
+    private updateBounds() {
+        if (!this.map) return;
 
-                self.needsRedraw = false;
-
-                const perfEnd = performance.now();
-                if (perfEnd - perfStart > 10) {
-                    console.log(`⚡ Canvas 렌더링: ${(perfEnd - perfStart).toFixed(1)}ms | 마커: ${self.markers.size}개`);
-                }
-            },
-
-            onRemove() {
-                self.cleanup();
-            }
+        const bounds = this.map.getBounds();
+        this.bounds = {
+            west: bounds.getWest(),
+            east: bounds.getEast(),
+            north: bounds.getNorth(),
+            south: bounds.getSouth()
         };
     }
 
-    /** 마커 그리기 */
-    private drawMarker(marker: CanvasMarker) {
+    /** Canvas가 매핑될 지도 좌표 (4개 코너) */
+    private getCoordinates(): [[number, number], [number, number], [number, number], [number, number]] {
+        if (!this.bounds) {
+            return [[0, 0], [0, 0], [0, 0], [0, 0]];
+        }
+
+        const { west, east, north, south } = this.bounds;
+        return [
+            [west, north],  // 북서
+            [east, north],  // 북동
+            [east, south],  // 남동
+            [west, south],  // 남서
+        ];
+    }
+
+    /** 지도 이벤트 리스너 설정 */
+    private setupMapListeners() {
         if (!this.map) return;
 
-        // 위경도 → 화면 픽셀 좌표
-        const point = this.map.project([marker.lng, marker.lat]);
-        const x = point.x;
-        const y = point.y;
+        // 지도 이동/줌 시 Canvas 영역 업데이트
+        this.map.on('move', () => {
+            this.updateBounds();
+            this.updateSourceCoordinates();
+            this.redraw();
+        });
 
-        // 마커 크기
+        // 클릭 이벤트 (지도 레이어에서)
+        this.map.on('click', this.layerId, (e) => {
+            const markerId = this.getMarkerAtMapPoint(e.lngLat.lng, e.lngLat.lat);
+            if (markerId) {
+                const marker = this.markers.get(markerId);
+                if (marker?.onClick) {
+                    marker.onClick();
+                }
+                if (this.onMarkerClick && marker) {
+                    this.onMarkerClick(markerId, marker);
+                }
+            }
+        });
+
+        // 호버 이벤트
+        this.map.on('mousemove', this.layerId, (e) => {
+            const markerId = this.getMarkerAtMapPoint(e.lngLat.lng, e.lngLat.lat);
+            if (markerId !== this.hoveredMarkerId) {
+                this.hoveredMarkerId = markerId;
+                this.map!.getCanvas().style.cursor = markerId ? 'pointer' : '';
+                if (this.onMarkerHover) {
+                    this.onMarkerHover(markerId);
+                }
+            }
+        });
+
+        this.map.on('mouseleave', this.layerId, () => {
+            if (this.hoveredMarkerId) {
+                this.hoveredMarkerId = null;
+                this.map!.getCanvas().style.cursor = '';
+                if (this.onMarkerHover) {
+                    this.onMarkerHover(null);
+                }
+            }
+        });
+    }
+
+    /** Source의 coordinates 업데이트 */
+    private updateSourceCoordinates() {
+        if (!this.map) return;
+
+        const source = this.map.getSource(this.sourceId) as any;
+        if (source && source.setCoordinates) {
+            source.setCoordinates(this.getCoordinates());
+        }
+    }
+
+    /** 위경도 → Canvas 픽셀 좌표 변환 */
+    private lngLatToCanvasXY(lng: number, lat: number): { x: number; y: number } {
+        if (!this.bounds) return { x: 0, y: 0 };
+
+        const { west, east, north, south } = this.bounds;
+        const x = ((lng - west) / (east - west)) * this.canvas.width;
+        const y = ((north - lat) / (north - south)) * this.canvas.height;
+
+        return { x, y };
+    }
+
+    /** Canvas 픽셀 좌표 → 위경도 변환 (클릭 감지용) */
+    private canvasXYToLngLat(x: number, y: number): { lng: number; lat: number } {
+        if (!this.bounds) return { lng: 0, lat: 0 };
+
+        const { west, east, north, south } = this.bounds;
+        const lng = west + (x / this.canvas.width) * (east - west);
+        const lat = north - (y / this.canvas.height) * (north - south);
+
+        return { lng, lat };
+    }
+
+    /** 지도 좌표에서 마커 찾기 */
+    private getMarkerAtMapPoint(lng: number, lat: number): string | null {
+        // Canvas 좌표로 변환
+        const { x, y } = this.lngLatToCanvasXY(lng, lat);
+        const key = `${Math.round(x)},${Math.round(y)}`;
+        return this.hitMap.get(key) || null;
+    }
+
+    /** Canvas 재렌더링 */
+    private redraw() {
+        if (!this.ctx || !this.bounds) return;
+
+        const perfStart = performance.now();
+
+        // 지우기
+        this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.hitMap.clear();
+
+        // 모든 마커 렌더링
+        let rendered = 0;
+        this.markers.forEach(marker => {
+            const { x, y } = this.lngLatToCanvasXY(marker.lng, marker.lat);
+
+            // 화면 밖 마커는 스킵
+            if (x < -100 || x > this.canvas.width + 100 || y < -100 || y > this.canvas.height + 100) {
+                return;
+            }
+
+            this.drawMarker(marker, x, y);
+            rendered++;
+        });
+
+        const perfEnd = performance.now();
+        if (rendered > 0) {
+            console.log(`⚡ [CanvasSource] 렌더링: ${(perfEnd - perfStart).toFixed(1)}ms | 마커: ${rendered}개`);
+        }
+    }
+
+    /** 마커 그리기 (Canvas 좌표) */
+    private drawMarker(marker: CanvasMarker, x: number, y: number) {
         const width = marker.size?.width || 80;
         const height = marker.size?.height || 32;
-        const padding = marker.padding || 8;
         const borderRadius = marker.borderRadius || 6;
 
         const ctx = this.ctx;
-
-        // 배경
         ctx.save();
 
-        // 그림자 (있으면)
+        // 그림자
         if (marker.shadow) {
             ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
             ctx.shadowBlur = 6;
@@ -149,6 +272,7 @@ export class CanvasMarkerRenderer {
             ctx.shadowOffsetY = 2;
         }
 
+        // 배경
         ctx.fillStyle = marker.bgColor;
         if (marker.borderColor) {
             ctx.strokeStyle = marker.borderColor;
@@ -165,15 +289,11 @@ export class CanvasMarkerRenderer {
         // 그림자 초기화
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
 
-        // 텍스트 정렬
-        const textAlign = marker.textAlign || 'center';
-        ctx.textAlign = textAlign;
+        // 텍스트
+        ctx.textAlign = marker.textAlign || 'center';
         ctx.textBaseline = 'middle';
 
-        // 다중 텍스트 라인 계산
         const hasSubtext = !!marker.subtext;
         const hasSubtext2 = !!marker.subtext2;
         const lineCount = 1 + (hasSubtext ? 1 : 0) + (hasSubtext2 ? 1 : 0);
@@ -192,7 +312,6 @@ export class CanvasMarkerRenderer {
         if (hasSubtext) {
             const subSize = marker.fontSize?.sub || 11;
             ctx.font = `400 ${subSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-            ctx.fillStyle = marker.textColor;
             ctx.globalAlpha = 0.7;
             ctx.fillText(marker.subtext!, x, currentY);
             ctx.globalAlpha = 1.0;
@@ -203,7 +322,6 @@ export class CanvasMarkerRenderer {
         if (hasSubtext2) {
             const sub2Size = marker.fontSize?.sub2 || 10;
             ctx.font = `400 ${sub2Size}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-            ctx.fillStyle = marker.textColor;
             ctx.globalAlpha = 0.6;
             ctx.fillText(marker.subtext2!, x, currentY);
             ctx.globalAlpha = 1.0;
@@ -211,11 +329,11 @@ export class CanvasMarkerRenderer {
 
         ctx.restore();
 
-        // 히트맵 등록 (클릭 감지용)
+        // 히트맵 등록
         this.registerHitArea(marker.id, x - width/2, y - height/2, width, height);
     }
 
-    /** 둥근 사각형 그리기 */
+    /** 둥근 사각형 */
     private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number) {
         ctx.beginPath();
         ctx.moveTo(x + radius, y);
@@ -230,9 +348,8 @@ export class CanvasMarkerRenderer {
         ctx.closePath();
     }
 
-    /** 히트 영역 등록 (클릭 감지용) */
+    /** 히트 영역 등록 */
     private registerHitArea(markerId: string, x: number, y: number, width: number, height: number) {
-        // 5px 간격으로 샘플링 (성능 최적화)
         for (let px = Math.floor(x); px < x + width; px += 5) {
             for (let py = Math.floor(y); py < y + height; py += 5) {
                 const key = `${Math.round(px)},${Math.round(py)}`;
@@ -241,83 +358,32 @@ export class CanvasMarkerRenderer {
         }
     }
 
-    /** 이벤트 리스너 설정 */
-    private setupEventListeners() {
-        if (!this.map) return;
-
-        const mapCanvas = this.map.getCanvas();
-
-        // 클릭
-        mapCanvas.addEventListener('click', (e) => {
-            const markerId = this.getMarkerAtPoint(e.offsetX, e.offsetY);
-            if (markerId) {
-                const marker = this.markers.get(markerId);
-                if (marker) {
-                    // 마커별 개별 onClick 호출
-                    if (marker.onClick) {
-                        marker.onClick();
-                    }
-                    // 전역 onMarkerClick 호출
-                    if (this.onMarkerClick) {
-                        this.onMarkerClick(markerId, marker);
-                    }
-                }
-            }
-        });
-
-        // 호버
-        mapCanvas.addEventListener('mousemove', (e) => {
-            const markerId = this.getMarkerAtPoint(e.offsetX, e.offsetY);
-
-            if (markerId !== this.hoveredMarkerId) {
-                this.hoveredMarkerId = markerId;
-
-                // 커서 변경
-                mapCanvas.style.cursor = markerId ? 'pointer' : '';
-
-                if (this.onMarkerHover) {
-                    this.onMarkerHover(markerId);
-                }
-            }
-        });
-    }
-
-    /** 특정 픽셀 위치의 마커 찾기 */
-    private getMarkerAtPoint(x: number, y: number): string | null {
-        const key = `${Math.round(x)},${Math.round(y)}`;
-        return this.hitMap.get(key) || null;
-    }
-
     /** 마커 추가/업데이트 */
     setMarker(marker: CanvasMarker) {
         this.markers.set(marker.id, marker);
         this.needsRedraw = true;
-        this.map?.triggerRepaint();
     }
 
     /** 마커 제거 */
     removeMarker(markerId: string) {
         this.markers.delete(markerId);
         this.needsRedraw = true;
-        this.map?.triggerRepaint();
     }
 
     /** 모든 마커 제거 */
     clearMarkers() {
         this.markers.clear();
         this.needsRedraw = true;
-        this.map?.triggerRepaint();
     }
 
     /** 마커 일괄 설정 */
     setMarkers(markers: CanvasMarker[]) {
         this.markers.clear();
         markers.forEach(m => this.markers.set(m.id, m));
-        this.needsRedraw = true;
-        this.map?.triggerRepaint();
+        this.redraw();
     }
 
-    /** 이벤트 핸들러 설정 */
+    /** 이벤트 핸들러 */
     onClick(handler: (markerId: string, marker: CanvasMarker) => void) {
         this.onMarkerClick = handler;
     }
@@ -328,6 +394,14 @@ export class CanvasMarkerRenderer {
 
     /** 정리 */
     cleanup() {
+        if (this.map) {
+            if (this.map.getLayer(this.layerId)) {
+                this.map.removeLayer(this.layerId);
+            }
+            if (this.map.getSource(this.sourceId)) {
+                this.map.removeSource(this.sourceId);
+            }
+        }
         this.markers.clear();
         this.hitMap.clear();
         this.map = null;

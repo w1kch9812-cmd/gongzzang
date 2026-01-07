@@ -1066,32 +1066,22 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             canvasRendererRef.current = new CanvasMarkerRenderer();
         }
 
-        // Mapbox GL Custom Layer 추가
+        // Canvas Source 방식으로 지도에 추가
         if (!canvasLayerAddedRef.current) {
-            const layer = canvasRendererRef.current.getLayer('canvas-markers');
-
             try {
-                // 다른 마커 레이어 위에 표시
-                mbMap.addLayer(layer);
+                canvasRendererRef.current.addToMap(mbMap);
                 canvasLayerAddedRef.current = true;
-                logger.log('[Canvas] ⚡ Canvas 마커 레이어 추가 완료');
+                logger.log('[CanvasSource] ⚡ Canvas 마커 레이어 추가 완료');
             } catch (e) {
-                logger.warn('[Canvas] 레이어 추가 실패:', e);
+                logger.warn('[CanvasSource] 레이어 추가 실패:', e);
             }
         }
 
         return () => {
             // 정리
-            if (canvasLayerAddedRef.current) {
-                try {
-                    mbMap.removeLayer('canvas-markers');
-                    canvasLayerAddedRef.current = false;
-                } catch (e) {
-                    // ignore - 이미 제거되었을 수 있음
-                }
-            }
             canvasRendererRef.current?.cleanup();
             canvasRendererRef.current = null;
+            canvasLayerAddedRef.current = false;
         };
     }, [map]);
 

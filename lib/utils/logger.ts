@@ -3,7 +3,7 @@
 
 const isDev = process.env.NODE_ENV === 'development';
 // ⚡ 성능: 로그 완전 비활성화 (렉 해결용)
-const ENABLE_LOGS = false;
+const ENABLE_LOGS = true;  // Canvas 디버깅을 위해 임시 활성화
 
 export const logger = {
     /** 일반 로그 (개발 환경에서만 출력) */
