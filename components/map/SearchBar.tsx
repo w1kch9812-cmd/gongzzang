@@ -21,7 +21,7 @@ export default function SearchBar() {
     const [showResults, setShowResults] = useState(false);
 
     const map = useMapStore((state) => state.mapInstance);
-    const { parcels, complexes, factories } = useDataStore();
+    const { parcels, industrialComplexes, factories } = useDataStore();
 
     const handleSearch = useCallback(async (searchQuery: string) => {
         if (!searchQuery.trim()) {
@@ -33,8 +33,8 @@ export default function SearchBar() {
         const searchResults: SearchResult[] = [];
 
         // 1. 산업단지 검색
-        if (complexes) {
-            complexes
+        if (industrialComplexes) {
+            industrialComplexes
                 .filter(c => c.name.includes(searchQuery))
                 .slice(0, 5)
                 .forEach(c => {
@@ -43,8 +43,8 @@ export default function SearchBar() {
                             type: 'complex',
                             id: c.id,
                             name: c.name,
-                            address: c.address,
-                            coord: c.coord,
+                            address: (c as any).address,
+                            coord: { lng: c.coord[0], lat: c.coord[1] },
                         });
                     }
                 });
@@ -53,7 +53,7 @@ export default function SearchBar() {
         // 2. 공장 검색
         if (factories) {
             factories
-                .filter(f => f.name.includes(searchQuery) || f.address?.includes(searchQuery))
+                .filter(f => f.name.includes(searchQuery) || (f as any).address?.includes(searchQuery))
                 .slice(0, 5)
                 .forEach(f => {
                     if (f.coord) {
@@ -61,38 +61,16 @@ export default function SearchBar() {
                             type: 'factory',
                             id: f.id,
                             name: f.name,
-                            address: f.address,
-                            coord: f.coord,
+                            address: (f as any).address,
+                            coord: { lng: f.coord[0], lat: f.coord[1] },
                         });
                     }
                 });
         }
 
-        // 3. 주소 검색 (Kakao Geocoding API)
-        if (searchQuery.length > 2) {
-            try {
-                const response = await fetch(`/api/geocoding?query=${encodeURIComponent(searchQuery)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    if (data.documents && data.documents.length > 0) {
-                        data.documents.slice(0, 3).forEach((doc: any) => {
-                            searchResults.push({
-                                type: 'address',
-                                id: `addr_${doc.x}_${doc.y}`,
-                                name: doc.address_name || doc.road_address_name,
-                                coord: { lat: parseFloat(doc.y), lng: parseFloat(doc.x) },
-                            });
-                        });
-                    }
-                }
-            } catch (error) {
-                console.error('주소 검색 실패:', error);
-            }
-        }
-
         setResults(searchResults);
         setLoading(false);
-    }, [complexes, factories]);
+    }, [industrialComplexes, factories]);
 
     const handleResultClick = useCallback((result: SearchResult) => {
         if (!map) return;

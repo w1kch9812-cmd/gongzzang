@@ -12,7 +12,7 @@ export type PolygonGeometry = GeoJSON.Polygon | GeoJSON.MultiPolygon | null;
 
 /** 필지 기본 정보 (초기 로딩용, 최소 데이터) */
 export interface ParcelIndex {
-    pnu: string;          // PNU (19자리) - 단일 ID 필드
+    pnu?: string;         // PNU (19자리) - 단일 ID 필드 (optional: 일부 필지는 PNU 없을 수 있음)
     center: Coordinate;   // 폴리라벨 중심점 [lng, lat]
     type: number;         // 비트 플래그: 1=실거래, 2=매물, 4=경매
     /**

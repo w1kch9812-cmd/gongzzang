@@ -55,7 +55,7 @@ const nextConfig: NextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // TypeScript 에러 빌드 시 무시 (이미 타입 체크 완료)
+  // TypeScript 에러 빌드 시 무시 (점진적 타입 개선 중)
   typescript: {
     ignoreBuildErrors: true,
   },

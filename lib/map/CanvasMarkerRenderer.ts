@@ -131,6 +131,9 @@ export type AnyMarker =
     | WarehouseMarker
     | HighlightMarker;
 
+// UnifiedMarkerLayer와 호환성을 위한 alias
+export type CanvasMarker = AnyMarker;
+
 // ========== 색상 상수 ==========
 
 const COLORS = {
@@ -168,17 +171,24 @@ function truncateName(name: string, maxLen = 8): string {
 // ========== 렌더러 ==========
 
 export class CanvasMarkerRenderer {
-    private mapboxGL: any;
-    private canvas: HTMLCanvasElement;
-    private ctx: CanvasRenderingContext2D;
+    private mapboxGL: any = null;
+    private canvas!: HTMLCanvasElement;
+    private ctx!: CanvasRenderingContext2D;
     private markers: AnyMarker[] = [];
     private selectedMarkerId: string | null = null;
     private onClick: ((marker: AnyMarker) => void) | null = null;
     private hitAreas: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
     private fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
+    private debug: boolean;
 
-    constructor(mapboxGL: any) {
+    constructor(debug: boolean = false) {
+        this.debug = debug;
+        logger.log('🎨 [CanvasMarkerRenderer] 생성 (debug:', debug, ')');
+    }
+
+    /** 지도에 렌더러 추가 (UnifiedMarkerLayer 호환) */
+    addToMap(mapboxGL: any) {
         this.mapboxGL = mapboxGL;
 
         const mapCanvas = mapboxGL.getCanvas();
@@ -195,7 +205,7 @@ export class CanvasMarkerRenderer {
         mapCanvas.parentElement?.appendChild(this.canvas);
         this.bindEvents();
 
-        logger.log('🎨 [CanvasMarkerRenderer] 초기화');
+        logger.log('🎨 [CanvasMarkerRenderer] 지도에 추가 완료');
     }
 
     private bindEvents() {
@@ -1149,10 +1159,21 @@ export class CanvasMarkerRenderer {
     }
 
     destroy() {
+        if (!this.mapboxGL) return;
         this.mapboxGL.off('render', this.render);
         this.mapboxGL.off('resize', this.handleResize);
         this.mapboxGL.getCanvas().removeEventListener('click', this.handleClick);
         this.canvas.remove();
         logger.log('🎨 [CanvasMarkerRenderer] 정리 완료');
+    }
+
+    /** UnifiedMarkerLayer 호환 - updateMarkers의 alias */
+    setMarkers(markers: CanvasMarker[]) {
+        this.updateMarkers(markers);
+    }
+
+    /** UnifiedMarkerLayer 호환 - destroy의 alias */
+    cleanup() {
+        this.destroy();
     }
 }

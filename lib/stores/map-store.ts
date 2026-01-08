@@ -55,6 +55,8 @@ interface MapState {
     currentBounds: ViewportBounds | null;
     currentLocation: { sido: string; sig: string; emd: string } | null;
     currentMapType: 'normal' | 'satellite' | 'hybrid' | 'terrain';
+    // 마커 클릭 중 상태 (애니메이션용)
+    markerClickingId: string | null;
     // 겹치는 실거래 마커 (Deck.gl로 점 렌더링)
     overlappingTxMarkers: OverlappingTxMarker[];
     // 비겹침 실거래 마커 (Canvas로 렌더링)
@@ -72,6 +74,7 @@ interface MapActions {
     setCurrentBounds: (bounds: ViewportBounds) => void;
     setCurrentLocation: (location: { sido: string; sig: string; emd: string } | null) => void;
     setMapType: (type: 'normal' | 'satellite' | 'hybrid' | 'terrain') => void;
+    setMarkerClickingId: (id: string | null) => void;
     zoomIn: () => void;
     zoomOut: () => void;
     setOverlappingTxMarkers: (markers: OverlappingTxMarker[]) => void;
@@ -91,6 +94,7 @@ export const useMapStore = create<MapStore>()(
         currentBounds: null,
         currentLocation: null,
         currentMapType: 'normal',
+        markerClickingId: null,
         overlappingTxMarkers: [],
         nonOverlappingTxMarkers: [],
         listingCanvasMarkers: [],
@@ -102,6 +106,7 @@ export const useMapStore = create<MapStore>()(
         setCurrentZoom: (zoom) => set({ currentZoom: zoom }),
         setCurrentBounds: (bounds) => set({ currentBounds: bounds }),
         setCurrentLocation: (location) => set({ currentLocation: location }),
+        setMarkerClickingId: (id) => set({ markerClickingId: id }),
 
         setMapType: (type) => {
             const { mapInstance } = get();

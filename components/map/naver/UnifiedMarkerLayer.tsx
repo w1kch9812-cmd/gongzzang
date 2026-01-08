@@ -1908,26 +1908,34 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                             priceText = formatTotalPrice(props.price);
                         }
 
-                        // Canvas 마커 데이터 생성
-                        canvasMarkers.push({
-                            id: `tx-${propType}-${props.id}`,
-                            lng,
-                            lat,
-                            type: 'transaction',
-                            text: priceText,
-                            subtext: isSelected ? (selectedParcel?.jibun || props.jibun) : undefined,
-                            bgColor: isSelected ? HIGHLIGHT_MARKER_STYLE.bgColor : TRANSACTION_MARKER_STYLE.bgColor,
-                            textColor: isSelected ? HIGHLIGHT_MARKER_STYLE.textColor : TRANSACTION_MARKER_STYLE.color.price,
-                            borderColor: isSelected ? HIGHLIGHT_MARKER_STYLE.borderColor : TRANSACTION_MARKER_STYLE.borderColor,
-                            shadow: isSelected ? HIGHLIGHT_MARKER_STYLE.shadow : TRANSACTION_MARKER_STYLE.shadow,
-                            size: { width: isSelected ? 120 : 80, height: isSelected ? 50 : 32 },
-                            fontSize: {
-                                main: isSelected ? parseFloat(HIGHLIGHT_MARKER_STYLE.fontSize.price) : parseFloat(TRANSACTION_MARKER_STYLE.fontSize.price),
-                                sub: isSelected ? parseFloat(HIGHLIGHT_MARKER_STYLE.fontSize.info) : parseFloat(TRANSACTION_MARKER_STYLE.fontSize.type),
-                            },
-                            data: props,
-                            onClick: () => handleParcelClick(props.id),
-                        });
+                        // 선택된 마커는 하이라이트 타입으로 렌더링
+                        if (isSelected && selectedParcel) {
+                            canvasMarkers.push({
+                                id: `tx-highlight-${props.id}`,
+                                lng,
+                                lat,
+                                type: 'highlight',
+                                title: selectedParcel.jibun || props.jibun || '',
+                                price: priceText,
+                                area: selectedParcel.area ? `${(selectedParcel.area / 3.3058).toFixed(0)}평` : undefined,
+                                info: selectedParcel.propertyType || propType,
+                                onClick: () => handleParcelClick(props.id),
+                            });
+                        } else {
+                            // 일반 실거래 마커 - TransactionMarker 인터페이스에 맞게
+                            canvasMarkers.push({
+                                id: `tx-${propType}-${props.id}`,
+                                lng,
+                                lat,
+                                type: 'transaction',
+                                price: priceText,
+                                propertyType: propType,
+                                jibun: props.jibun,
+                                transactionDate: props.transactionDate,
+                                area: props.area,
+                                onClick: () => handleParcelClick(props.id),
+                            });
+                        }
                     });
 
                     // Canvas에 일괄 렌더링
