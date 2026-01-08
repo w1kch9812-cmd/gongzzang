@@ -49,6 +49,7 @@
     "get-nonce": "^1.0.1",
     "glob": "^13.0.0",
     "hdbscanjs": "^1.0.12",
+    "html-to-image": "^1.11.13",
     "html2canvas": "^1.4.1",
     "lucide-react": "^0.562.0",
     "maplibre-gl": "^5.15.0",

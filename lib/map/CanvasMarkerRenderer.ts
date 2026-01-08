@@ -1,6 +1,6 @@
 // lib/map/CanvasMarkerRenderer.ts
 // Mapbox GL Custom Layer 기반 마커 렌더러
-// Canvas 2D API로 DOM 스타일을 재현하여 WebGL 텍스처로 렌더링
+// html-to-image로 실제 DOM을 캡처하여 WebGL 텍스처로 렌더링 (픽셀 퍼펙트)
 //
 // 성능 최적화:
 // - 스프라이트 아틀라스 캐싱 (마커 데이터 변경 시에만 재생성)
@@ -11,6 +11,7 @@
 
 import { logger } from '@/lib/utils/logger';
 import { ZOOM_PARCEL } from './zoomConfig';
+import { toPng } from 'html-to-image';
 
 // ========== 타입 정의 ==========
 
@@ -433,7 +434,7 @@ export class CanvasMarkerRenderer {
         this.spriteCache.clear();
         this.atlasCursor = { x: 0, y: 0, rowHeight: 0 };
 
-        // 순차 처리 (atlasCursor 충돌 방지)
+        // 순차 처리 (atlasCursor 충돌 방지) - DOM 캡처는 순서대로!
         const keysArray = Array.from(neededKeys);
 
         for (const key of keysArray) {
@@ -446,8 +447,8 @@ export class CanvasMarkerRenderer {
             const areaPyeong = parts[5];
             const isRecent = parts[6] === 'N';
 
-            // Canvas 2D API 사용 (동기적이고 안정적)
-            const sprite = this.drawMarkerSprite(ctx, {
+            // DOM 캡처로 픽셀 퍼펙트 마커 생성
+            const sprite = await this.drawMarkerSpriteFromDOM(ctx, {
                 isSelected,
                 typeLabel,
                 typeColor,
@@ -463,6 +464,173 @@ export class CanvasMarkerRenderer {
         }
 
         logger.log(`🎨 [CanvasMarkerRenderer] 아틀라스 빌드 완료: ${this.spriteCache.size}개 스프라이트`);
+    }
+
+    // html-to-image로 실제 DOM을 캡처하여 Canvas에 그리기
+    private async drawMarkerSpriteFromDOM(
+        ctx: CanvasRenderingContext2D,
+        data: {
+            isSelected: boolean;
+            typeLabel: string;
+            typeColor: string;
+            price: string;
+            dateStr: string;
+            areaPyeong: string;
+            isRecent: boolean;
+        }
+    ): Promise<CachedSprite | null> {
+        const scale = SPRITE_SCALE;
+
+        // DOM 마커 생성 (UnifiedMarkerLayer와 동일한 HTML)
+        const container = document.createElement('div');
+        container.style.cssText = `
+            position: fixed;
+            left: -9999px;
+            top: -9999px;
+            z-index: -1;
+        `;
+
+        // N 뱃지
+        const newBadgeHTML = data.isRecent && !data.isSelected ? `
+            <span style="
+                position: absolute;
+                top: -6px;
+                right: -6px;
+                background: #EF4444;
+                color: #fff;
+                font-size: 9px;
+                font-weight: 700;
+                padding: 2px 4px;
+                border-radius: 3px;
+                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+                border: 1.5px solid #fff;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">N</span>
+        ` : '';
+
+        // 2줄 (날짜, 평수)
+        const secondLineHTML = (data.dateStr || data.areaPyeong) ? `
+            <div style="
+                font-size: 9px;
+                color: #9CA3AF;
+                margin-top: 1px;
+                display: flex;
+                gap: 4px;
+                justify-content: center;
+                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            ">
+                ${data.dateStr ? `<span>${data.dateStr}</span>` : ''}
+                ${data.areaPyeong ? `<span>${data.areaPyeong}평</span>` : ''}
+            </div>
+        ` : '';
+
+        const typeLabelHTML = `<span style="
+            font-size: 10px;
+            color: ${data.typeColor};
+            font-weight: 500;
+            margin-right: 4px;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        ">${data.typeLabel}</span>`;
+
+        const markerStyle = data.isSelected ? `
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 8px 10px;
+            background: #ffffff;
+            border-radius: 6px;
+            border: 2px solid #3B82F6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            position: relative;
+            line-height: 1.2;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        ` : `
+            display: inline-flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 4px 10px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 100px;
+            border: 1px solid rgba(200, 200, 200, 0.8);
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+            position: relative;
+            line-height: 1.2;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        `;
+
+        const priceStyle = data.isSelected
+            ? `font-weight: 600; font-size: 15px; color: #1F2937; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`
+            : `font-weight: 500; font-size: 12px; color: #374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
+
+        container.innerHTML = `
+            <div style="${markerStyle}">
+                ${newBadgeHTML}
+                <div style="display: flex; align-items: center; white-space: nowrap;">
+                    ${typeLabelHTML}
+                    <span style="${priceStyle}">${data.price}</span>
+                </div>
+                ${secondLineHTML}
+            </div>
+        `;
+
+        document.body.appendChild(container);
+
+        try {
+            const markerEl = container.firstElementChild as HTMLElement;
+
+            // html-to-image로 캡처
+            const dataUrl = await toPng(markerEl, {
+                pixelRatio: scale,
+                backgroundColor: undefined, // 투명 배경
+                style: {
+                    // 캡처 시 추가 스타일 (필요한 경우)
+                },
+            });
+
+            // 이미지 로드
+            const img = new Image();
+            await new Promise<void>((resolve, reject) => {
+                img.onload = () => resolve();
+                img.onerror = reject;
+                img.src = dataUrl;
+            });
+
+            // 여유 공간 (그림자, 뱃지용)
+            const padding = 8 * scale;
+            const width = img.width + padding * 2;
+            const height = img.height + padding * 2;
+
+            // 아틀라스 공간 체크
+            if (this.atlasCursor.x + width > ATLAS_SIZE) {
+                this.atlasCursor.x = 0;
+                this.atlasCursor.y += this.atlasCursor.rowHeight + 4;
+                this.atlasCursor.rowHeight = 0;
+            }
+
+            if (this.atlasCursor.y + height > ATLAS_SIZE) {
+                document.body.removeChild(container);
+                logger.warn('[CanvasMarkerRenderer] 아틀라스 공간 부족');
+                return null;
+            }
+
+            const spriteX = this.atlasCursor.x;
+            const spriteY = this.atlasCursor.y;
+
+            // Canvas에 그리기
+            ctx.drawImage(img, spriteX + padding, spriteY + padding);
+
+            // 커서 업데이트
+            this.atlasCursor.x += width + 4;
+            this.atlasCursor.rowHeight = Math.max(this.atlasCursor.rowHeight, height);
+
+            document.body.removeChild(container);
+            return { x: spriteX, y: spriteY, width, height };
+        } catch (error) {
+            document.body.removeChild(container);
+            logger.warn('[CanvasMarkerRenderer] DOM 캡처 실패, 폴백 사용:', error);
+            // 폴백: Canvas 2D API로 직접 그리기
+            return this.drawMarkerSprite(ctx, data);
+        }
     }
 
     // Canvas 2D API로 마커 직접 그리기
