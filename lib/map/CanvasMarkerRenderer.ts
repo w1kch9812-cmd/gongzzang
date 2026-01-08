@@ -93,8 +93,8 @@ interface CachedSprite {
 }
 
 const LAYER_ID = 'canvas-markers-layer';
-const ATLAS_SIZE = 2048;
-const SPRITE_SCALE = 2; // Retina 대응
+const ATLAS_SIZE = 4096; // 선명도를 위해 크기 증가
+const SPRITE_SCALE = 3; // Retina 대응 + 선명도 향상 (2→3)
 const SQM_PER_PYEONG = 3.3058;
 
 // ========== Canvas 마커 렌더러 ==========
@@ -141,12 +141,20 @@ export class CanvasMarkerRenderer {
     constructor(mapboxGL: any) {
         this.mapboxGL = mapboxGL;
 
-        // 아틀라스 Canvas 생성
+        // 아틀라스 Canvas 생성 (고해상도)
         this.atlasCanvas = document.createElement('canvas');
         this.atlasCanvas.width = ATLAS_SIZE;
         this.atlasCanvas.height = ATLAS_SIZE;
-        const ctx = this.atlasCanvas.getContext('2d');
+        const ctx = this.atlasCanvas.getContext('2d', {
+            alpha: true,
+            desynchronized: false,
+        });
         if (!ctx) throw new Error('Canvas 2D context not available');
+
+        // 선명도 설정
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+
         this.atlasCtx = ctx;
 
         // Custom Layer 추가
@@ -214,6 +222,7 @@ export class CanvasMarkerRenderer {
                 gl.bindTexture(gl.TEXTURE_2D, self.texture);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+                // 선명도 향상: LINEAR_MIPMAP_LINEAR 대신 LINEAR 사용 (밉맵 없이 직접 샘플링)
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
@@ -450,35 +459,46 @@ export class CanvasMarkerRenderer {
         const style = data.isSelected ? SELECTED_STYLE : NORMAL_STYLE;
         const scale = SPRITE_SCALE;
 
-        // 텍스트 측정
+        // 폰트 설정 (DOM 마커와 동일)
         const fontSize1 = style.fontSize * scale;
         const fontSize2 = 9 * scale;
-        ctx.font = `500 ${fontSize1}px -apple-system, BlinkMacSystemFont, sans-serif`;
+        const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-        // 1줄: [유형] 가격
-        const line1 = `${data.typeLabel} ${data.price}`;
-        const line1Width = ctx.measureText(line1).width;
+        // 텍스트 측정 - 유형과 가격 따로 측정
+        ctx.font = `500 ${10 * scale}px ${fontFamily}`; // 유형 라벨 크기 (DOM: 10px)
+        const typeLabelWidth = ctx.measureText(data.typeLabel).width;
+        const spaceWidth = ctx.measureText(' ').width;
+
+        ctx.font = `500 ${fontSize1}px ${fontFamily}`;
+        const priceWidth = ctx.measureText(data.price).width;
+
+        const line1Width = typeLabelWidth + spaceWidth + priceWidth;
 
         // 2줄: 날짜 면적 (있을 경우만)
         let line2 = '';
         let line2Width = 0;
         if (data.dateStr || data.areaPyeong) {
-            ctx.font = `400 ${fontSize2}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.font = `400 ${fontSize2}px ${fontFamily}`;
             line2 = [data.dateStr, data.areaPyeong ? `${data.areaPyeong}평` : ''].filter(Boolean).join(' ');
             line2Width = ctx.measureText(line2).width;
         }
 
         const paddingX = style.padding.x * scale;
         const paddingY = style.padding.y * scale;
-        const lineHeight = fontSize1 + (line2 ? fontSize2 + 2 * scale : 0);
-        const width = Math.ceil(Math.max(line1Width, line2Width) + paddingX * 2);
+        const lineGap = line2 ? 1 * scale : 0; // 줄 간격
+        const lineHeight = fontSize1 + (line2 ? fontSize2 + lineGap : 0);
+
+        // N 뱃지 공간 확보
+        const badgeExtra = data.isRecent && !data.isSelected ? 8 * scale : 0;
+        const contentWidth = Math.max(line1Width, line2Width);
+        const width = Math.ceil(contentWidth + paddingX * 2 + badgeExtra + 8 * scale); // 여유 공간 추가
         const height = Math.ceil(lineHeight + paddingY * 2);
         const borderRadius = Math.min(style.borderRadius * scale, height / 2);
 
         // 아틀라스 공간 체크
         if (this.atlasCursor.x + width > ATLAS_SIZE) {
             this.atlasCursor.x = 0;
-            this.atlasCursor.y += this.atlasCursor.rowHeight + 4;
+            this.atlasCursor.y += this.atlasCursor.rowHeight + 4 * scale;
             this.atlasCursor.rowHeight = 0;
         }
 
@@ -490,17 +510,18 @@ export class CanvasMarkerRenderer {
         const x = this.atlasCursor.x;
         const y = this.atlasCursor.y;
 
-        // 그림자 (선택적)
+        // 그림자 (DOM 마커와 동일: 0 2px 6px rgba(0,0,0,0.12))
         if (style.shadow) {
             ctx.save();
-            ctx.shadowColor = 'rgba(0,0,0,0.12)';
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
             ctx.shadowBlur = 6 * scale;
+            ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 2 * scale;
         }
 
-        // 배경
+        // 배경 (흰색 불투명)
         ctx.beginPath();
-        this.roundRect(ctx, x + 2, y + 2, width - 4, height - 4, borderRadius);
+        this.roundRect(ctx, x + 4 * scale, y + 4 * scale, width - 8 * scale, height - 8 * scale, borderRadius);
         ctx.fillStyle = style.bgColor;
         ctx.fill();
 
@@ -508,56 +529,86 @@ export class CanvasMarkerRenderer {
 
         // 테두리
         ctx.beginPath();
-        this.roundRect(ctx, x + 2, y + 2, width - 4, height - 4, borderRadius);
+        this.roundRect(ctx, x + 4 * scale, y + 4 * scale, width - 8 * scale, height - 8 * scale, borderRadius);
         ctx.strokeStyle = style.borderColor;
         ctx.lineWidth = style.borderWidth * scale;
         ctx.stroke();
 
-        // 1줄 텍스트
-        ctx.font = `500 ${fontSize1}px -apple-system, BlinkMacSystemFont, sans-serif`;
-        ctx.textAlign = 'center';
-        ctx.textBaseline = 'middle';
+        // 컨텐츠 영역 중앙
+        const contentX = x + 4 * scale;
+        const contentY = y + 4 * scale;
+        const contentW = width - 8 * scale;
+        const contentH = height - 8 * scale;
+        const centerX = contentX + contentW / 2;
 
-        const centerX = x + width / 2;
-        const line1Y = y + paddingY + fontSize1 / 2 + (line2 ? 0 : 2);
+        // 1줄 Y 위치
+        const line1Y = contentY + paddingY + fontSize1 / 2 + (line2 ? -lineGap / 2 : 0);
 
-        // 유형 라벨 (색상)
-        const typeLabelWidth = ctx.measureText(data.typeLabel + ' ').width;
-        ctx.fillStyle = data.typeColor;
+        // 텍스트 시작 X 위치 (중앙 정렬 기준)
+        const textStartX = centerX - line1Width / 2;
+
+        // 유형 라벨 (색상, 10px, 500)
+        ctx.font = `500 ${10 * scale}px ${fontFamily}`;
         ctx.textAlign = 'left';
-        ctx.fillText(data.typeLabel, centerX - line1Width / 2, line1Y);
+        ctx.textBaseline = 'middle';
+        ctx.fillStyle = data.typeColor;
+        ctx.fillText(data.typeLabel, textStartX, line1Y);
 
-        // 가격
+        // 가격 (12px, 500)
+        ctx.font = `500 ${fontSize1}px ${fontFamily}`;
         ctx.fillStyle = style.textColor;
-        ctx.fillText(data.price, centerX - line1Width / 2 + typeLabelWidth, line1Y);
+        ctx.fillText(data.price, textStartX + typeLabelWidth + spaceWidth, line1Y);
 
-        // 2줄 텍스트
+        // 2줄 텍스트 (9px, 400, #9CA3AF)
         if (line2) {
-            ctx.font = `400 ${fontSize2}px -apple-system, BlinkMacSystemFont, sans-serif`;
+            ctx.font = `400 ${fontSize2}px ${fontFamily}`;
             ctx.fillStyle = '#9CA3AF';
             ctx.textAlign = 'center';
-            ctx.fillText(line2, centerX, line1Y + fontSize1 / 2 + fontSize2 / 2 + 2 * scale);
+            ctx.fillText(line2, centerX, line1Y + fontSize1 / 2 + fontSize2 / 2 + lineGap);
         }
 
-        // N 뱃지 (최근 거래)
+        // N 뱃지 (최근 거래) - DOM 스타일: 사각형 뱃지
         if (data.isRecent && !data.isSelected) {
-            const badgeSize = 14 * scale;
-            const badgeX = x + width - 10 * scale;
-            const badgeY = y + 2 * scale;
+            const badgeFontSize = 9 * scale;
+            const badgePadX = 4 * scale;
+            const badgePadY = 2 * scale;
+            const badgeBorderRadius = 3 * scale;
 
+            ctx.font = `700 ${badgeFontSize}px ${fontFamily}`;
+            const badgeTextWidth = ctx.measureText('N').width;
+            const badgeWidth = badgeTextWidth + badgePadX * 2;
+            const badgeHeight = badgeFontSize + badgePadY * 2;
+
+            // 뱃지 위치 (오른쪽 상단)
+            const badgeX = contentX + contentW - badgeWidth / 2 + 2 * scale;
+            const badgeY = contentY - badgeHeight / 2 + 2 * scale;
+
+            // 뱃지 배경 (빨간색)
             ctx.beginPath();
-            ctx.arc(badgeX, badgeY + badgeSize / 2, badgeSize / 2, 0, Math.PI * 2);
+            this.roundRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeBorderRadius);
             ctx.fillStyle = '#EF4444';
             ctx.fill();
 
-            ctx.font = `700 ${9 * scale}px -apple-system, BlinkMacSystemFont, sans-serif`;
-            ctx.fillStyle = '#fff';
+            // 뱃지 테두리 (흰색)
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5 * scale;
+            ctx.stroke();
+
+            // 뱃지 그림자
+            ctx.save();
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+            ctx.shadowBlur = 3 * scale;
+            ctx.shadowOffsetY = 1 * scale;
+            ctx.restore();
+
+            // 뱃지 텍스트
+            ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('N', badgeX, badgeY + badgeSize / 2);
+            ctx.fillText('N', badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
         }
 
-        this.atlasCursor.x += width + 4;
+        this.atlasCursor.x += width + 4 * scale;
         this.atlasCursor.rowHeight = Math.max(this.atlasCursor.rowHeight, height);
 
         return { x, y, width, height };
