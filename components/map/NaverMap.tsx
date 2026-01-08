@@ -17,6 +17,7 @@ const UnifiedPolygonGLLayer = dynamic(() => import('./naver/UnifiedPolygonGLLaye
 const UnifiedMarkerLayer = dynamic(() => import('./naver/UnifiedMarkerLayer').then(mod => ({ default: mod.UnifiedMarkerLayer })), { ssr: false });
 const TransactionDotsLayer = dynamic(() => import('./naver/TransactionDotsLayer'), { ssr: false });
 const FactoryDistributionLayer = dynamic(() => import('./naver/FactoryDistributionLayer'), { ssr: false });
+const CanvasMarkerLayer = dynamic(() => import('./naver/CanvasMarkerLayer'), { ssr: false });
 const OffscreenMarkerLayer = dynamic(() => import('../markers/OffscreenMarkerLayer').then(mod => ({ default: mod.OffscreenMarkerLayer })), { ssr: false });
 // ComplexMarkerLayer 제거됨 - UnifiedMarkerLayer에 통합
 const FocusModeOverlay = dynamic(() => import('./FocusModeOverlay').then(mod => ({ default: mod.FocusModeOverlay })), { ssr: false });
@@ -520,8 +521,11 @@ export default function NaverMap() {
 
             {/* 통합 마커 레이어 - 모든 마커 (실거래가 클러스터링 포함) */}
             {/* 밀집 지역: Deck.gl 점 마커, 분산 지역: DOM 마커 */}
-            {glReady && markersEnabled && <UnifiedMarkerLayer map={map} />}
+            {/* Canvas 레이어로 실거래 마커 렌더링하므로 DOM 마커 비활성화 */}
+            {glReady && markersEnabled && <UnifiedMarkerLayer map={map} skipTransactionMarkers />}
             {glReady && markersEnabled && <TransactionDotsLayer map={map} />}
+            {/* Canvas 기반 고성능 실거래 마커 레이어 */}
+            {glReady && markersEnabled && <CanvasMarkerLayer map={map} />}
             {/* 공장 분포 밀도 그리드 레이어 (저줌에서 표시) */}
             {glReady && <FactoryDistributionLayer map={map} />}
 

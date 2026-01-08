@@ -14,6 +14,18 @@ export interface OverlappingTxMarker {
     propertyType: string;
 }
 
+// 비겹침 실거래 마커 데이터 (Canvas 렌더링용)
+export interface NonOverlappingTxMarker {
+    id: string;
+    lng: number;
+    lat: number;
+    price: string;           // 포맷된 가격
+    propertyType?: string;
+    jibun?: string;
+    transactionDate?: string;
+    area?: number;
+}
+
 interface MapState {
     mapReady: boolean;
     mapInstance: any | null;
@@ -23,6 +35,8 @@ interface MapState {
     currentMapType: 'normal' | 'satellite' | 'hybrid' | 'terrain';
     // 겹치는 실거래 마커 (Deck.gl로 점 렌더링)
     overlappingTxMarkers: OverlappingTxMarker[];
+    // 비겹침 실거래 마커 (Canvas로 렌더링)
+    nonOverlappingTxMarkers: NonOverlappingTxMarker[];
 }
 
 interface MapActions {
@@ -35,6 +49,7 @@ interface MapActions {
     zoomIn: () => void;
     zoomOut: () => void;
     setOverlappingTxMarkers: (markers: OverlappingTxMarker[]) => void;
+    setNonOverlappingTxMarkers: (markers: NonOverlappingTxMarker[]) => void;
 }
 
 type MapStore = MapState & MapActions;
@@ -49,6 +64,7 @@ export const useMapStore = create<MapStore>()(
         currentLocation: null,
         currentMapType: 'normal',
         overlappingTxMarkers: [],
+        nonOverlappingTxMarkers: [],
 
         // Actions
         setMapReady: (ready) => set({ mapReady: ready }),
@@ -93,6 +109,7 @@ export const useMapStore = create<MapStore>()(
         },
 
         setOverlappingTxMarkers: (markers) => set({ overlappingTxMarkers: markers }),
+        setNonOverlappingTxMarkers: (markers) => set({ nonOverlappingTxMarkers: markers }),
     }))
 );
 
