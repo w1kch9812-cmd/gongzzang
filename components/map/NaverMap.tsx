@@ -22,6 +22,7 @@ const OffscreenMarkerLayer = dynamic(() => import('../markers/OffscreenMarkerLay
 // ComplexMarkerLayer 제거됨 - UnifiedMarkerLayer에 통합
 const FocusModeOverlay = dynamic(() => import('./FocusModeOverlay').then(mod => ({ default: mod.FocusModeOverlay })), { ssr: false });
 const PerformanceMonitor = dynamic(() => import('../debug/PerformanceMonitor').then(mod => ({ default: mod.PerformanceMonitor })), { ssr: false });
+const MarkerDebugPanel = dynamic(() => import('../debug/MarkerDebugPanel').then(mod => ({ default: mod.MarkerDebugPanel })), { ssr: false });
 
 export default function NaverMap() {
     const mapRef = useRef<HTMLDivElement>(null);
@@ -539,6 +540,9 @@ export default function NaverMap() {
 
             {/* 성능 모니터 (개발 환경에서만) */}
             {process.env.NODE_ENV === 'development' && showDebug && <PerformanceMonitor />}
+
+            {/* 마커 디버그 패널 (개발 환경에서만) */}
+            {process.env.NODE_ENV === 'development' && <MarkerDebugPanel />}
 
             {/* 줌 레벨 표시 */}
             <div style={{
