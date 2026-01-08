@@ -441,6 +441,7 @@ export class CanvasMarkerRenderer {
         const scale = SPRITE_SCALE;
 
         // DOM 마커 생성 (UnifiedMarkerLayer와 동일한 HTML)
+        // 그림자와 N뱃지가 잘리지 않도록 wrapper에 padding 추가
         const container = document.createElement('div');
         container.style.cssText = `
             position: fixed;
@@ -448,6 +449,9 @@ export class CanvasMarkerRenderer {
             top: -9999px;
             z-index: -1;
         `;
+
+        // wrapper div로 그림자/뱃지 공간 확보 (padding 20px)
+        const wrapperPadding = 20;
 
         // N 뱃지
         const newBadgeHTML = data.isRecent && !data.isSelected ? `
@@ -521,29 +525,30 @@ export class CanvasMarkerRenderer {
             ? `font-weight: 600; font-size: 15px; color: #1F2937; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`
             : `font-weight: 500; font-size: 12px; color: #374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
 
+        // wrapper로 감싸서 그림자/N뱃지 공간 확보
         container.innerHTML = `
-            <div style="${markerStyle}">
-                ${newBadgeHTML}
-                <div style="display: flex; align-items: center; white-space: nowrap;">
-                    ${typeLabelHTML}
-                    <span style="${priceStyle}">${data.price}</span>
+            <div style="padding: ${wrapperPadding}px; display: inline-block;">
+                <div style="${markerStyle}">
+                    ${newBadgeHTML}
+                    <div style="display: flex; align-items: center; white-space: nowrap;">
+                        ${typeLabelHTML}
+                        <span style="${priceStyle}">${data.price}</span>
+                    </div>
+                    ${secondLineHTML}
                 </div>
-                ${secondLineHTML}
             </div>
         `;
 
         document.body.appendChild(container);
 
         try {
-            const markerEl = container.firstElementChild as HTMLElement;
+            // wrapper를 캡처 (그림자/뱃지 포함)
+            const wrapperEl = container.firstElementChild as HTMLElement;
 
-            // html-to-image로 캡처
-            const dataUrl = await toPng(markerEl, {
+            // html-to-image로 캡처 (wrapper 전체를 캡처해서 그림자/뱃지 포함)
+            const dataUrl = await toPng(wrapperEl, {
                 pixelRatio: scale,
                 backgroundColor: undefined, // 투명 배경
-                style: {
-                    // 캡처 시 추가 스타일 (필요한 경우)
-                },
             });
 
             // 이미지 로드
@@ -554,10 +559,9 @@ export class CanvasMarkerRenderer {
                 img.src = dataUrl;
             });
 
-            // 여유 공간 (그림자, 뱃지용)
-            const padding = 8 * scale;
-            const width = img.width + padding * 2;
-            const height = img.height + padding * 2;
+            // wrapper에 이미 padding이 포함되어 있으므로 추가 padding 불필요
+            const width = img.width;
+            const height = img.height;
 
             // 아틀라스 공간 체크
             if (this.atlasCursor.x + width > ATLAS_SIZE) {
@@ -575,8 +579,8 @@ export class CanvasMarkerRenderer {
             const spriteX = this.atlasCursor.x;
             const spriteY = this.atlasCursor.y;
 
-            // Canvas에 그리기
-            ctx.drawImage(img, spriteX + padding, spriteY + padding);
+            // Canvas에 그리기 (wrapper 전체 이미지)
+            ctx.drawImage(img, spriteX, spriteY);
 
             // 커서 업데이트
             this.atlasCursor.x += width + 4;

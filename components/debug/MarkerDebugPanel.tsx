@@ -8,11 +8,14 @@ import { useState } from 'react';
 export function MarkerDebugPanel() {
     const [isOpen, setIsOpen] = useState(true);
 
-    // 테스트 데이터
+    // 테스트 데이터 (CanvasMarkerRenderer의 getTypeLabel()과 동일한 색상)
+    // TYPE_INFO: factory=#8B5CF6, warehouse=#F59E0B, land=#10B981, knowledge-center=#3B82F6
+    // 기본값 (propertyType 없을 때): #6B7280
     const testMarkers = [
         { typeLabel: '공장', typeColor: '#8B5CF6', price: '1.2억/평', dateStr: '24.03', areaPyeong: '150', isRecent: true, isSelected: false },
         { typeLabel: '창고', typeColor: '#F59E0B', price: '8,500만/평', dateStr: '24.01', areaPyeong: '80', isRecent: false, isSelected: false },
-        { typeLabel: '토지', typeColor: '#6B7280', price: '2.5억/평', dateStr: '23.12', areaPyeong: '200', isRecent: false, isSelected: false },
+        { typeLabel: '토지', typeColor: '#10B981', price: '2.5억/평', dateStr: '23.12', areaPyeong: '200', isRecent: false, isSelected: false },
+        { typeLabel: '토지', typeColor: '#6B7280', price: '1.8억/평', dateStr: '23.11', areaPyeong: '120', isRecent: false, isSelected: false, note: '(기본값)' },
         { typeLabel: '지산', typeColor: '#3B82F6', price: '3.8억/평', dateStr: '24.02', areaPyeong: '45', isRecent: true, isSelected: false },
         { typeLabel: '공장', typeColor: '#8B5CF6', price: '5.2억/평', dateStr: '24.03', areaPyeong: '300', isRecent: false, isSelected: true },
     ];
@@ -83,8 +86,8 @@ export function MarkerDebugPanel() {
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
                 {testMarkers.map((marker, idx) => (
                     <div key={idx} style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <span style={{ fontSize: 11, color: '#999', width: 60 }}>
-                            {marker.isSelected ? '선택됨' : marker.isRecent ? 'N뱃지' : '일반'}
+                        <span style={{ fontSize: 11, color: '#999', width: 80 }}>
+                            {marker.isSelected ? '선택됨' : marker.isRecent ? 'N뱃지' : (marker as any).note || '일반'}
                         </span>
                         {/* 실제 DOM 마커 */}
                         <DOMMarker {...marker} />
