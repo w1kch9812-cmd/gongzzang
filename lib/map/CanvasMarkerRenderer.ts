@@ -1,6 +1,6 @@
 // lib/map/CanvasMarkerRenderer.ts
 // Mapbox GL Custom Layer 기반 마커 렌더러
-// 기존 DOM 마커 디자인을 Canvas로 재현 (성능 향상)
+// Canvas 2D API로 DOM 스타일을 재현하여 WebGL 텍스처로 렌더링
 //
 // 성능 최적화:
 // - 스프라이트 아틀라스 캐싱 (마커 데이터 변경 시에만 재생성)
@@ -48,29 +48,32 @@ function getTypeLabel(propertyType?: string, jibun?: string): { label: string; c
     return { label: '토지', color: '#6B7280' };
 }
 
-// ========== 스타일 정의 (기존 DOM 마커와 동일) ==========
+// ========== 스타일 정의 (DOM 마커와 정확히 동일) ==========
+// UnifiedMarkerLayer.tsx의 TRANSACTION_MARKER_STYLE과 동일
 
 interface SpriteStyle {
     bgColor: string;
     borderColor: string;
     textColor: string;
     fontSize: number;
+    typeFontSize: number;
     padding: { x: number; y: number };
     borderRadius: number;
     borderWidth: number;
-    shadow: boolean;
+    shadow: { blur: number; offsetY: number; color: string };
 }
 
-// 일반 실거래 마커 스타일
+// 일반 실거래 마커 스타일 (DOM: padding: 4px 10px, border-radius: 100px)
 const NORMAL_STYLE: SpriteStyle = {
     bgColor: 'rgba(255, 255, 255, 0.92)',
     borderColor: 'rgba(200, 200, 200, 0.8)',
     textColor: '#374151',
-    fontSize: 12,
-    padding: { x: 10, y: 4 },
-    borderRadius: 100,
+    fontSize: 12,       // price font-size
+    typeFontSize: 10,   // type label font-size
+    padding: { x: 10, y: 4 },  // padding: 4px 10px
+    borderRadius: 100,  // pill shape
     borderWidth: 1,
-    shadow: true,
+    shadow: { blur: 6, offsetY: 2, color: 'rgba(0, 0, 0, 0.12)' },
 };
 
 // 선택된 마커 스타일
@@ -79,10 +82,11 @@ const SELECTED_STYLE: SpriteStyle = {
     borderColor: '#3B82F6',
     textColor: '#1F2937',
     fontSize: 15,
+    typeFontSize: 11,
     padding: { x: 10, y: 8 },
     borderRadius: 6,
     borderWidth: 2,
-    shadow: true,
+    shadow: { blur: 12, offsetY: 4, color: 'rgba(59, 130, 246, 0.3)' },
 };
 
 interface CachedSprite {
@@ -94,7 +98,7 @@ interface CachedSprite {
 
 const LAYER_ID = 'canvas-markers-layer';
 const ATLAS_SIZE = 4096; // 선명도를 위해 크기 증가
-const SPRITE_SCALE = 3; // Retina 대응 + 선명도 향상 (2→3)
+const SPRITE_SCALE = 4; // 고해상도 스케일 (Retina 2x * 2)
 const SQM_PER_PYEONG = 3.3058;
 
 // ========== Canvas 마커 렌더러 ==========
@@ -112,6 +116,8 @@ export class CanvasMarkerRenderer {
     private atlasCtx: CanvasRenderingContext2D;
     private spriteCache: Map<string, CachedSprite> = new Map();
     private atlasNeedsUpdate: boolean = true;
+    private atlasBuilding: boolean = false; // 비동기 빌드 중
+    private textureNeedsUpload: boolean = false; // 텍스처 업로드 필요
     private atlasCursor = { x: 0, y: 0, rowHeight: 0 };
 
     // WebGL 리소스
@@ -222,8 +228,8 @@ export class CanvasMarkerRenderer {
                 gl.bindTexture(gl.TEXTURE_2D, self.texture);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                // 선명도 향상: LINEAR_MIPMAP_LINEAR 대신 LINEAR 사용 (밉맵 없이 직접 샘플링)
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+                // 밉맵 사용으로 축소 시 선명도 향상
+                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
                 gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
 
                 // Attribute/Uniform locations 캐시
@@ -249,12 +255,23 @@ export class CanvasMarkerRenderer {
                 const currentZoom = self.mapboxGL.getZoom();
                 if (currentZoom < ZOOM_PARCEL.min) return;
 
-                // 아틀라스 업데이트 (마커 데이터 변경 시에만)
-                if (self.atlasNeedsUpdate) {
-                    self.buildAtlas();
+                // 비동기 아틀라스 빌드 시작
+                if (self.atlasNeedsUpdate && !self.atlasBuilding) {
+                    self.atlasNeedsUpdate = false;
+                    self.atlasBuilding = true;
+                    self.buildAtlasAsync().then(() => {
+                        self.atlasBuilding = false;
+                        self.textureNeedsUpload = true;
+                        self.mapboxGL.triggerRepaint();
+                    });
+                }
+
+                // 텍스처 업로드 (빌드 완료 후)
+                if (self.textureNeedsUpload) {
                     gl.bindTexture(gl.TEXTURE_2D, self.texture);
                     gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, self.atlasCanvas);
-                    self.atlasNeedsUpdate = false;
+                    gl.generateMipmap(gl.TEXTURE_2D);
+                    self.textureNeedsUpload = false;
                 }
 
                 // 뷰포트 필터링
@@ -403,7 +420,7 @@ export class CanvasMarkerRenderer {
         return `${isSelected ? 'sel' : 'def'}:${typeInfo.label}:${typeInfo.color}:${marker.price}:${dateStr}:${areaPyeong}:${isRecent ? 'N' : ''}`;
     }
 
-    private buildAtlas() {
+    private async buildAtlasAsync(): Promise<void> {
         const ctx = this.atlasCtx;
         const neededKeys = new Set<string>();
 
@@ -416,7 +433,10 @@ export class CanvasMarkerRenderer {
         this.spriteCache.clear();
         this.atlasCursor = { x: 0, y: 0, rowHeight: 0 };
 
-        for (const key of neededKeys) {
+        // 순차 처리 (atlasCursor 충돌 방지)
+        const keysArray = Array.from(neededKeys);
+
+        for (const key of keysArray) {
             const parts = key.split(':');
             const isSelected = parts[0] === 'sel';
             const typeLabel = parts[1];
@@ -426,6 +446,7 @@ export class CanvasMarkerRenderer {
             const areaPyeong = parts[5];
             const isRecent = parts[6] === 'N';
 
+            // Canvas 2D API 사용 (동기적이고 안정적)
             const sprite = this.drawMarkerSprite(ctx, {
                 isSelected,
                 typeLabel,
@@ -444,6 +465,7 @@ export class CanvasMarkerRenderer {
         logger.log(`🎨 [CanvasMarkerRenderer] 아틀라스 빌드 완료: ${this.spriteCache.size}개 스프라이트`);
     }
 
+    // Canvas 2D API로 마커 직접 그리기
     private drawMarkerSprite(
         ctx: CanvasRenderingContext2D,
         data: {
@@ -456,162 +478,168 @@ export class CanvasMarkerRenderer {
             isRecent: boolean;
         }
     ): CachedSprite | null {
-        const style = data.isSelected ? SELECTED_STYLE : NORMAL_STYLE;
         const scale = SPRITE_SCALE;
-
-        // 폰트 설정 (DOM 마커와 동일)
-        const fontSize1 = style.fontSize * scale;
-        const fontSize2 = 9 * scale;
+        const style = data.isSelected ? SELECTED_STYLE : NORMAL_STYLE;
         const fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
-        // 텍스트 측정 - 유형과 가격 따로 측정
-        ctx.font = `500 ${10 * scale}px ${fontFamily}`; // 유형 라벨 크기 (DOM: 10px)
+        // 텍스트 측정
+        ctx.font = `500 ${style.typeFontSize * scale}px ${fontFamily}`;
         const typeLabelWidth = ctx.measureText(data.typeLabel).width;
-        const spaceWidth = ctx.measureText(' ').width;
+        const marginRight = 4 * scale;
 
-        ctx.font = `500 ${fontSize1}px ${fontFamily}`;
+        ctx.font = `500 ${style.fontSize * scale}px ${fontFamily}`;
         const priceWidth = ctx.measureText(data.price).width;
+        const line1Width = typeLabelWidth + marginRight + priceWidth;
 
-        const line1Width = typeLabelWidth + spaceWidth + priceWidth;
-
-        // 2줄: 날짜 면적 (있을 경우만)
-        let line2 = '';
         let line2Width = 0;
-        if (data.dateStr || data.areaPyeong) {
-            ctx.font = `400 ${fontSize2}px ${fontFamily}`;
-            line2 = [data.dateStr, data.areaPyeong ? `${data.areaPyeong}평` : ''].filter(Boolean).join(' ');
-            line2Width = ctx.measureText(line2).width;
+        const line2FontSize = 9 * scale;
+        const hasLine2 = data.dateStr || data.areaPyeong;
+        if (hasLine2) {
+            ctx.font = `400 ${line2FontSize}px ${fontFamily}`;
+            const dateWidth = data.dateStr ? ctx.measureText(data.dateStr).width : 0;
+            const areaWidth = data.areaPyeong ? ctx.measureText(`${data.areaPyeong}평`).width : 0;
+            const gap = (dateWidth && areaWidth) ? 4 * scale : 0;
+            line2Width = dateWidth + gap + areaWidth;
         }
 
+        // 크기 계산
         const paddingX = style.padding.x * scale;
         const paddingY = style.padding.y * scale;
-        const lineGap = line2 ? 1 * scale : 0; // 줄 간격
-        const lineHeight = fontSize1 + (line2 ? fontSize2 + lineGap : 0);
+        const lineHeight = 1.2;
+        const line1Height = style.fontSize * scale * lineHeight;
+        const line2Height = hasLine2 ? line2FontSize * lineHeight : 0;
+        const lineGap = hasLine2 ? 1 * scale : 0;
 
-        // N 뱃지 공간 확보
-        const badgeExtra = data.isRecent && !data.isSelected ? 8 * scale : 0;
         const contentWidth = Math.max(line1Width, line2Width);
-        const width = Math.ceil(contentWidth + paddingX * 2 + badgeExtra + 8 * scale); // 여유 공간 추가
-        const height = Math.ceil(lineHeight + paddingY * 2);
-        const borderRadius = Math.min(style.borderRadius * scale, height / 2);
+        const contentHeight = line1Height + lineGap + line2Height;
+
+        const markerWidth = Math.ceil(contentWidth + paddingX * 2);
+        const markerHeight = Math.ceil(contentHeight + paddingY * 2);
+        const borderRadius = Math.min(style.borderRadius * scale, markerHeight / 2);
+
+        const badgeOverhang = data.isRecent && !data.isSelected ? 10 * scale : 0;
+        const shadowPadding = 10 * scale;
+
+        const totalWidth = markerWidth + shadowPadding * 2 + badgeOverhang;
+        const totalHeight = markerHeight + shadowPadding * 2 + badgeOverhang;
 
         // 아틀라스 공간 체크
-        if (this.atlasCursor.x + width > ATLAS_SIZE) {
+        if (this.atlasCursor.x + totalWidth > ATLAS_SIZE) {
             this.atlasCursor.x = 0;
-            this.atlasCursor.y += this.atlasCursor.rowHeight + 4 * scale;
+            this.atlasCursor.y += this.atlasCursor.rowHeight + 4;
             this.atlasCursor.rowHeight = 0;
         }
 
-        if (this.atlasCursor.y + height > ATLAS_SIZE) {
+        if (this.atlasCursor.y + totalHeight > ATLAS_SIZE) {
             logger.warn('[CanvasMarkerRenderer] 아틀라스 공간 부족');
             return null;
         }
 
-        const x = this.atlasCursor.x;
-        const y = this.atlasCursor.y;
+        const spriteX = this.atlasCursor.x;
+        const spriteY = this.atlasCursor.y;
+        const markerX = spriteX + shadowPadding + badgeOverhang / 2;
+        const markerY = spriteY + shadowPadding + badgeOverhang;
 
-        // 그림자 (DOM 마커와 동일: 0 2px 6px rgba(0,0,0,0.12))
-        if (style.shadow) {
-            ctx.save();
-            ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-            ctx.shadowBlur = 6 * scale;
-            ctx.shadowOffsetX = 0;
-            ctx.shadowOffsetY = 2 * scale;
-        }
+        // 그림자 + 배경
+        ctx.save();
+        ctx.shadowColor = style.shadow.color;
+        ctx.shadowBlur = style.shadow.blur * scale;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = style.shadow.offsetY * scale;
 
-        // 배경 (흰색 불투명)
         ctx.beginPath();
-        this.roundRect(ctx, x + 4 * scale, y + 4 * scale, width - 8 * scale, height - 8 * scale, borderRadius);
+        this.roundRect(ctx, markerX, markerY, markerWidth, markerHeight, borderRadius);
         ctx.fillStyle = style.bgColor;
         ctx.fill();
-
-        if (style.shadow) ctx.restore();
+        ctx.restore();
 
         // 테두리
         ctx.beginPath();
-        this.roundRect(ctx, x + 4 * scale, y + 4 * scale, width - 8 * scale, height - 8 * scale, borderRadius);
+        this.roundRect(ctx, markerX, markerY, markerWidth, markerHeight, borderRadius);
         ctx.strokeStyle = style.borderColor;
         ctx.lineWidth = style.borderWidth * scale;
         ctx.stroke();
 
-        // 컨텐츠 영역 중앙
-        const contentX = x + 4 * scale;
-        const contentY = y + 4 * scale;
-        const contentW = width - 8 * scale;
-        const contentH = height - 8 * scale;
-        const centerX = contentX + contentW / 2;
-
-        // 1줄 Y 위치
-        const line1Y = contentY + paddingY + fontSize1 / 2 + (line2 ? -lineGap / 2 : 0);
-
-        // 텍스트 시작 X 위치 (중앙 정렬 기준)
+        // 1줄 텍스트
+        const centerX = markerX + markerWidth / 2;
+        const line1Y = markerY + paddingY + line1Height / 2;
         const textStartX = centerX - line1Width / 2;
 
-        // 유형 라벨 (색상, 10px, 500)
-        ctx.font = `500 ${10 * scale}px ${fontFamily}`;
+        ctx.font = `500 ${style.typeFontSize * scale}px ${fontFamily}`;
         ctx.textAlign = 'left';
         ctx.textBaseline = 'middle';
         ctx.fillStyle = data.typeColor;
         ctx.fillText(data.typeLabel, textStartX, line1Y);
 
-        // 가격 (12px, 500)
-        ctx.font = `500 ${fontSize1}px ${fontFamily}`;
+        ctx.font = `500 ${style.fontSize * scale}px ${fontFamily}`;
         ctx.fillStyle = style.textColor;
-        ctx.fillText(data.price, textStartX + typeLabelWidth + spaceWidth, line1Y);
+        ctx.fillText(data.price, textStartX + typeLabelWidth + marginRight, line1Y);
 
-        // 2줄 텍스트 (9px, 400, #9CA3AF)
-        if (line2) {
-            ctx.font = `400 ${fontSize2}px ${fontFamily}`;
+        // 2줄 텍스트
+        if (hasLine2) {
+            ctx.font = `400 ${line2FontSize}px ${fontFamily}`;
             ctx.fillStyle = '#9CA3AF';
-            ctx.textAlign = 'center';
-            ctx.fillText(line2, centerX, line1Y + fontSize1 / 2 + fontSize2 / 2 + lineGap);
+            const line2Y = line1Y + line1Height / 2 + lineGap + line2Height / 2;
+
+            if (data.dateStr && data.areaPyeong) {
+                const dateWidth = ctx.measureText(data.dateStr).width;
+                const areaText = `${data.areaPyeong}평`;
+                const gap = 4 * scale;
+                const totalLine2Width = dateWidth + gap + ctx.measureText(areaText).width;
+                const line2StartX = centerX - totalLine2Width / 2;
+
+                ctx.textAlign = 'left';
+                ctx.fillText(data.dateStr, line2StartX, line2Y);
+                ctx.fillText(areaText, line2StartX + dateWidth + gap, line2Y);
+            } else {
+                ctx.textAlign = 'center';
+                ctx.fillText(data.dateStr || `${data.areaPyeong}평`, centerX, line2Y);
+            }
         }
 
-        // N 뱃지 (최근 거래) - DOM 스타일: 사각형 뱃지
+        // N 뱃지
         if (data.isRecent && !data.isSelected) {
             const badgeFontSize = 9 * scale;
+            ctx.font = `700 ${badgeFontSize}px ${fontFamily}`;
+            const badgeText = 'N';
+            const badgeTextWidth = ctx.measureText(badgeText).width;
             const badgePadX = 4 * scale;
             const badgePadY = 2 * scale;
-            const badgeBorderRadius = 3 * scale;
-
-            ctx.font = `700 ${badgeFontSize}px ${fontFamily}`;
-            const badgeTextWidth = ctx.measureText('N').width;
             const badgeWidth = badgeTextWidth + badgePadX * 2;
             const badgeHeight = badgeFontSize + badgePadY * 2;
+            const badgeBorderRadius = 3 * scale;
 
-            // 뱃지 위치 (오른쪽 상단)
-            const badgeX = contentX + contentW - badgeWidth / 2 + 2 * scale;
-            const badgeY = contentY - badgeHeight / 2 + 2 * scale;
+            const badgeX = markerX + markerWidth - badgeWidth / 2 - 2 * scale;
+            const badgeY = markerY - badgeHeight / 2 - 2 * scale;
 
-            // 뱃지 배경 (빨간색)
-            ctx.beginPath();
-            this.roundRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeBorderRadius);
-            ctx.fillStyle = '#EF4444';
-            ctx.fill();
-
-            // 뱃지 테두리 (흰색)
-            ctx.strokeStyle = '#ffffff';
-            ctx.lineWidth = 1.5 * scale;
-            ctx.stroke();
-
-            // 뱃지 그림자
             ctx.save();
             ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
             ctx.shadowBlur = 3 * scale;
             ctx.shadowOffsetY = 1 * scale;
+
+            ctx.beginPath();
+            this.roundRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeBorderRadius);
+            ctx.fillStyle = '#EF4444';
+            ctx.fill();
             ctx.restore();
 
-            // 뱃지 텍스트
+            ctx.beginPath();
+            this.roundRect(ctx, badgeX, badgeY, badgeWidth, badgeHeight, badgeBorderRadius);
+            ctx.strokeStyle = '#ffffff';
+            ctx.lineWidth = 1.5 * scale;
+            ctx.stroke();
+
             ctx.fillStyle = '#ffffff';
             ctx.textAlign = 'center';
             ctx.textBaseline = 'middle';
-            ctx.fillText('N', badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
+            ctx.fillText(badgeText, badgeX + badgeWidth / 2, badgeY + badgeHeight / 2);
         }
 
-        this.atlasCursor.x += width + 4 * scale;
-        this.atlasCursor.rowHeight = Math.max(this.atlasCursor.rowHeight, height);
+        // 커서 업데이트
+        this.atlasCursor.x += totalWidth + 4;
+        this.atlasCursor.rowHeight = Math.max(this.atlasCursor.rowHeight, totalHeight);
 
-        return { x, y, width, height };
+        return { x: spriteX, y: spriteY, width: totalWidth, height: totalHeight };
     }
 
     private roundRect(ctx: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
