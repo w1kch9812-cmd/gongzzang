@@ -60,7 +60,7 @@ export class CanvasMarkerRenderer {
     private onMarkerHover?: (markerId: string | null) => void;
     private hoveredMarkerId: string | null = null;
 
-    constructor() {
+    constructor(debug = false) {
         // Canvas 생성 (크기는 고정, 해상도 중요)
         this.canvas = document.createElement('canvas');
         this.canvas.width = 2048;
@@ -72,6 +72,20 @@ export class CanvasMarkerRenderer {
         })!;
 
         console.log('[CanvasSource] Canvas 생성:', this.canvas.width, 'x', this.canvas.height);
+
+        // 디버깅: Canvas를 화면에 표시
+        if (debug) {
+            this.canvas.style.position = 'fixed';
+            this.canvas.style.top = '10px';
+            this.canvas.style.right = '10px';
+            this.canvas.style.width = '400px';
+            this.canvas.style.height = '400px';
+            this.canvas.style.border = '2px solid red';
+            this.canvas.style.zIndex = '9999';
+            this.canvas.style.background = 'white';
+            document.body.appendChild(this.canvas);
+            console.log('[CanvasSource] 디버그 모드: Canvas를 화면에 표시');
+        }
     }
 
     /** 지도에 Canvas Source 추가 */
@@ -80,13 +94,17 @@ export class CanvasMarkerRenderer {
 
         // 현재 지도 영역 저장
         this.updateBounds();
+        console.log('[CanvasSource] Bounds:', this.bounds);
 
         // Canvas Source 등록
         if (!map.getSource(this.sourceId)) {
+            const coords = this.getCoordinates();
+            console.log('[CanvasSource] Coordinates:', coords);
+
             map.addSource(this.sourceId, {
                 type: 'canvas',
                 canvas: this.canvas,
-                coordinates: this.getCoordinates(),
+                coordinates: coords,
                 animate: true // Canvas 변경 시 자동 업데이트
             });
             console.log('[CanvasSource] Source 추가됨');
@@ -107,6 +125,12 @@ export class CanvasMarkerRenderer {
 
         // 지도 이벤트 리스너
         this.setupMapListeners();
+
+        // 초기 렌더링 트리거
+        console.log('[CanvasSource] 초기 마커 개수:', this.markers.size);
+        if (this.markers.size > 0) {
+            this.redraw();
+        }
     }
 
     /** 현재 지도 영역 업데이트 */
@@ -227,7 +251,10 @@ export class CanvasMarkerRenderer {
 
     /** Canvas 재렌더링 */
     private redraw() {
-        if (!this.ctx || !this.bounds) return;
+        if (!this.ctx || !this.bounds) {
+            console.warn('[CanvasSource] redraw 실패: ctx 또는 bounds가 없음');
+            return;
+        }
 
         const perfStart = performance.now();
 
@@ -237,11 +264,13 @@ export class CanvasMarkerRenderer {
 
         // 모든 마커 렌더링
         let rendered = 0;
+        let skipped = 0;
         this.markers.forEach(marker => {
             const { x, y } = this.lngLatToCanvasXY(marker.lng, marker.lat);
 
             // 화면 밖 마커는 스킵
             if (x < -100 || x > this.canvas.width + 100 || y < -100 || y > this.canvas.height + 100) {
+                skipped++;
                 return;
             }
 
@@ -250,8 +279,16 @@ export class CanvasMarkerRenderer {
         });
 
         const perfEnd = performance.now();
-        if (rendered > 0) {
-            console.log(`⚡ [CanvasSource] 렌더링: ${(perfEnd - perfStart).toFixed(1)}ms | 마커: ${rendered}개`);
+        console.log(`⚡ [CanvasSource] 렌더링: ${(perfEnd - perfStart).toFixed(1)}ms | 마커: ${rendered}개 (스킵: ${skipped}개)`);
+
+        // Canvas Source 업데이트 트리거
+        if (this.map) {
+            const source = this.map.getSource(this.sourceId) as any;
+            if (source && source.play) {
+                source.play();
+            }
+            // 지도 다시 그리기 강제
+            this.map.triggerRepaint();
         }
     }
 
@@ -380,6 +417,14 @@ export class CanvasMarkerRenderer {
     setMarkers(markers: CanvasMarker[]) {
         this.markers.clear();
         markers.forEach(m => this.markers.set(m.id, m));
+        console.log('[CanvasSource] setMarkers 호출됨:', markers.length, '개');
+
+        // 지도가 아직 연결되지 않았으면 나중에 렌더링
+        if (!this.map || !this.bounds) {
+            console.warn('[CanvasSource] 지도가 아직 준비되지 않음, 렌더링 지연');
+            return;
+        }
+
         this.redraw();
     }
 

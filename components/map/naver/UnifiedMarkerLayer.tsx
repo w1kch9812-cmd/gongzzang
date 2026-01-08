@@ -1061,9 +1061,9 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         const mbMap = (map as any)._mapbox;
         if (!mbMap) return;
 
-        // Canvas 렌더러 생성
+        // Canvas 렌더러 생성 (디버그 모드 활성화)
         if (!canvasRendererRef.current) {
-            canvasRendererRef.current = new CanvasMarkerRenderer();
+            canvasRendererRef.current = new CanvasMarkerRenderer(true); // debug=true
         }
 
         // Canvas Source 방식으로 지도에 추가
