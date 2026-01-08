@@ -2054,6 +2054,14 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 useMapStore.getState().setOverlappingTxMarkers([]);
             }
 
+            // 매물/경매 레이어 비활성화 시 Canvas 데이터 초기화
+            if (!showListingMarker && skipTransactionMarkers) {
+                useMapStore.getState().setListingCanvasMarkers([]);
+            }
+            if (!showAuctionMarker && skipTransactionMarkers) {
+                useMapStore.getState().setAuctionCanvasMarkers([]);
+            }
+
             // ========== 선택된 필지 하이라이트 마커 (실거래가 마커 레이어 밖에서 선택된 경우) ==========
             // 폴리곤 클릭으로 선택되었거나, 실거래 마커 레이어가 비활성화된 경우에도 하이라이트 표시
             if (selectedParcel && selectedParcel.transactionPrice) {
@@ -2099,6 +2107,9 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             }
 
             // 매물 마커 - 통합 클러스터링
+            // Canvas용 매물 마커 데이터 수집
+            const canvasListingMarkers: { id: string; lng: number; lat: number; price: string; area: string; dealType: string; propertyType?: string }[] = [];
+
             if (showListingMarker) {
                 const listIds = currentIdsByType.get('listing')!;
                 const listClusterIds = currentIdsByType.get('cluster-prop')!;
@@ -2120,6 +2131,24 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         listIds.add(markerId);
                         // 개별 마커로 렌더링됨 → 실거래 점 마커 불필요
                         renderedListingParcelIds.add(props.id);
+
+                        // Canvas용 데이터 수집 (skipTransactionMarkers일 때)
+                        if (skipTransactionMarkers) {
+                            canvasListingMarkers.push({
+                                id: props.id,
+                                lng,
+                                lat,
+                                price: formatPrice(props.price || 0),
+                                area: formatAreaWithPrefix(props.area || 0),
+                                dealType: props.dealType || '매매',
+                                propertyType: props.propertyType,
+                            });
+                        }
+                    }
+
+                    // skipTransactionMarkers일 때 개별 마커는 Canvas로 렌더링, 클러스터만 DOM
+                    if (skipTransactionMarkers && !isCluster) {
+                        return; // Canvas에서 렌더링하므로 DOM 마커 생성 스킵
                     }
 
                     const position = new window.naver.maps.LatLng(lat, lng);
@@ -2162,6 +2191,9 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 });
             }
 
+            // Canvas용 경매 마커 데이터 수집
+            const canvasAuctionMarkers: { id: string; lng: number; lat: number; price: string; area: string; failCount?: number; propertyType?: string }[] = [];
+
             // 경매 마커 - 통합 클러스터링
             if (showAuctionMarker) {
                 const auctIds = currentIdsByType.get('auction')!;
@@ -2184,6 +2216,24 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         auctIds.add(markerId);
                         // 개별 마커로 렌더링됨 → 실거래 점 마커 불필요
                         renderedAuctionParcelIds.add(props.id);
+
+                        // Canvas용 데이터 수집 (skipTransactionMarkers일 때)
+                        if (skipTransactionMarkers) {
+                            canvasAuctionMarkers.push({
+                                id: props.id,
+                                lng,
+                                lat,
+                                price: formatPrice(props.price || 0),
+                                area: formatArea(props.area || 0),
+                                failCount: props.failCount,
+                                propertyType: props.propertyType,
+                            });
+                        }
+                    }
+
+                    // skipTransactionMarkers일 때 개별 마커는 Canvas로 렌더링, 클러스터만 DOM
+                    if (skipTransactionMarkers && !isCluster) {
+                        return; // Canvas에서 렌더링하므로 DOM 마커 생성 스킵
                     }
 
                     const position = new window.naver.maps.LatLng(lat, lng);
@@ -2213,6 +2263,15 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         manager.setupHoverEffect(markerId, pooledMarker, baseZIndex, clickHandler);
                     }
                 });
+            }
+
+            // Canvas 레이어용 매물/경매 데이터 저장
+            if (skipTransactionMarkers) {
+                useMapStore.getState().setListingCanvasMarkers(canvasListingMarkers);
+                useMapStore.getState().setAuctionCanvasMarkers(canvasAuctionMarkers);
+                if (canvasListingMarkers.length > 0 || canvasAuctionMarkers.length > 0) {
+                    logger.log(`🎯 [UnifiedMarkerLayer] Canvas용 매물: ${canvasListingMarkers.length}개, 경매: ${canvasAuctionMarkers.length}개`);
+                }
             }
 
         }
@@ -2334,7 +2393,8 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         kcAdItems, icAdItems, selectedParcel,
         handleClusterClick, handleParcelClick, handleRegionClick,
         showKnowledgeCenter, showTransactionMarker, showListingMarker, showAuctionMarker,
-        showIndustrialComplex, clusteringDisableZoom, transactionPriceDisplayMode
+        showIndustrialComplex, clusteringDisableZoom, transactionPriceDisplayMode,
+        skipTransactionMarkers
     ]);
 
     // ========== 산업단지 폴리곤 추적 마커 (폴리곤 가시 영역에 마커 표시) ==========
