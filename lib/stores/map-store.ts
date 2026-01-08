@@ -26,6 +26,28 @@ export interface NonOverlappingTxMarker {
     area?: number;
 }
 
+// 매물 마커 데이터 (Canvas 렌더링용)
+export interface ListingCanvasMarker {
+    id: string;
+    lng: number;
+    lat: number;
+    price: string;
+    area: string;
+    dealType: string;
+    propertyType?: string;
+}
+
+// 경매 마커 데이터 (Canvas 렌더링용)
+export interface AuctionCanvasMarker {
+    id: string;
+    lng: number;
+    lat: number;
+    price: string;
+    area: string;
+    failCount?: number;
+    propertyType?: string;
+}
+
 interface MapState {
     mapReady: boolean;
     mapInstance: any | null;
@@ -37,6 +59,10 @@ interface MapState {
     overlappingTxMarkers: OverlappingTxMarker[];
     // 비겹침 실거래 마커 (Canvas로 렌더링)
     nonOverlappingTxMarkers: NonOverlappingTxMarker[];
+    // 매물 마커 (Canvas로 렌더링)
+    listingCanvasMarkers: ListingCanvasMarker[];
+    // 경매 마커 (Canvas로 렌더링)
+    auctionCanvasMarkers: AuctionCanvasMarker[];
 }
 
 interface MapActions {
@@ -50,6 +76,8 @@ interface MapActions {
     zoomOut: () => void;
     setOverlappingTxMarkers: (markers: OverlappingTxMarker[]) => void;
     setNonOverlappingTxMarkers: (markers: NonOverlappingTxMarker[]) => void;
+    setListingCanvasMarkers: (markers: ListingCanvasMarker[]) => void;
+    setAuctionCanvasMarkers: (markers: AuctionCanvasMarker[]) => void;
 }
 
 type MapStore = MapState & MapActions;
@@ -65,6 +93,8 @@ export const useMapStore = create<MapStore>()(
         currentMapType: 'normal',
         overlappingTxMarkers: [],
         nonOverlappingTxMarkers: [],
+        listingCanvasMarkers: [],
+        auctionCanvasMarkers: [],
 
         // Actions
         setMapReady: (ready) => set({ mapReady: ready }),
@@ -110,6 +140,8 @@ export const useMapStore = create<MapStore>()(
 
         setOverlappingTxMarkers: (markers) => set({ overlappingTxMarkers: markers }),
         setNonOverlappingTxMarkers: (markers) => set({ nonOverlappingTxMarkers: markers }),
+        setListingCanvasMarkers: (markers) => set({ listingCanvasMarkers: markers }),
+        setAuctionCanvasMarkers: (markers) => set({ auctionCanvasMarkers: markers }),
     }))
 );
 

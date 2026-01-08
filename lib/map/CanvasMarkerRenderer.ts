@@ -1,650 +1,1158 @@
 // lib/map/CanvasMarkerRenderer.ts
-// Mapbox GL Custom Layer 기반 마커 렌더러
-// html-to-image로 실제 DOM을 캡처하여 WebGL 텍스처로 렌더링 (픽셀 퍼펙트)
-//
-// 성능 최적화:
-// - 스프라이트 아틀라스 캐싱 (마커 데이터 변경 시에만 재생성)
-// - Float32Array 버퍼 재사용 (GC 방지)
-// - Attribute/Uniform location 캐싱
-// - 뷰포트 필터링으로 화면 밖 마커 스킵
-// - 정렬 결과 캐싱 (updateMarkers 시 1회)
+// Mapbox GL Canvas 기반 통합 마커 렌더러
+// 모든 마커 타입을 Canvas 2D로 직접 그리기
 
 import { logger } from '@/lib/utils/logger';
-import { ZOOM_PARCEL } from './zoomConfig';
-import { toPng } from 'html-to-image';
 
-// ========== 타입 정의 ==========
+// ========== 마커 타입 ==========
 
-export interface MarkerData {
+export type MarkerType =
+    | 'transaction'      // 실거래
+    | 'listing'          // 매물
+    | 'auction'          // 경매
+    | 'region-cluster'   // 행정구역 클러스터
+    | 'listing-cluster'  // 매물 클러스터
+    | 'auction-cluster'  // 경매 클러스터
+    | 'industrial'       // 산업단지
+    | 'knowledge'        // 지식산업센터
+    | 'factory'          // 공장
+    | 'warehouse'        // 창고
+    | 'highlight';       // 선택된 필지 하이라이트
+
+// ========== 마커 데이터 인터페이스 ==========
+
+export interface BaseMarker {
     id: string;
     lng: number;
     lat: number;
-    // 기존 DOM 마커와 동일한 데이터
-    price: string;           // 포맷된 가격 (예: "1.2억/평")
-    propertyType?: string;   // factory, warehouse, land, knowledge-center
-    jibun?: string;          // 지번 (지목 추출용)
-    transactionDate?: string; // 거래일자 (YYYY-MM-DD)
-    area?: number;           // 면적 (㎡)
-    isSelected?: boolean;
+    type: MarkerType;
 }
 
-// 유형별 라벨 및 색상 (기존 DOM 마커와 동일)
-const TYPE_INFO: Record<string, { label: string; color: string }> = {
+// 실거래 마커
+export interface TransactionMarker extends BaseMarker {
+    type: 'transaction';
+    price: string;
+    propertyType?: string;
+    jibun?: string;
+    transactionDate?: string;
+    area?: number;
+}
+
+// 매물 마커
+export interface ListingMarker extends BaseMarker {
+    type: 'listing';
+    price: string;
+    area: string;
+    dealType: string; // 매매, 전세, 임대, 분양
+    propertyType?: string;
+    auctionInfo?: { price: number; failCount: number };
+}
+
+// 경매 마커
+export interface AuctionMarker extends BaseMarker {
+    type: 'auction';
+    price: string;
+    area: string;
+    failCount?: number;
+    propertyType?: string;
+}
+
+// 행정구역 클러스터 마커
+export interface RegionClusterMarker extends BaseMarker {
+    type: 'region-cluster';
+    regionName: string;
+    listingCount: number;
+    auctionCount: number;
+}
+
+// 매물/경매 클러스터 마커
+export interface ListingClusterMarker extends BaseMarker {
+    type: 'listing-cluster';
+    count: number;
+    propertyType?: string;
+}
+
+export interface AuctionClusterMarker extends BaseMarker {
+    type: 'auction-cluster';
+    count: number;
+    propertyType?: string;
+}
+
+// 산업단지 마커
+export interface IndustrialMarker extends BaseMarker {
+    type: 'industrial';
+    name: string;
+    status?: string;
+    completionRate?: number;
+    listingCount?: number;
+    auctionCount?: number;
+}
+
+// 지식산업센터 마커
+export interface KnowledgeMarker extends BaseMarker {
+    type: 'knowledge';
+    name: string;
+    status?: string;
+    completionRate?: number;
+    listingCount?: number;
+    auctionCount?: number;
+}
+
+// 공장/창고 마커
+export interface FactoryMarker extends BaseMarker {
+    type: 'factory';
+    name: string;
+}
+
+export interface WarehouseMarker extends BaseMarker {
+    type: 'warehouse';
+    name: string;
+}
+
+// 하이라이트 마커
+export interface HighlightMarker extends BaseMarker {
+    type: 'highlight';
+    title: string;
+    price?: string;
+    area?: string;
+    info?: string;
+}
+
+export type AnyMarker =
+    | TransactionMarker
+    | ListingMarker
+    | AuctionMarker
+    | RegionClusterMarker
+    | ListingClusterMarker
+    | AuctionClusterMarker
+    | IndustrialMarker
+    | KnowledgeMarker
+    | FactoryMarker
+    | WarehouseMarker
+    | HighlightMarker;
+
+// ========== 색상 상수 ==========
+
+const COLORS = {
+    // 실거래 유형
     factory: { label: '공장', color: '#8B5CF6' },
     warehouse: { label: '창고', color: '#F59E0B' },
     land: { label: '토지', color: '#10B981' },
     'knowledge-center': { label: '지산', color: '#3B82F6' },
+
+    // 마커 테마
+    listing: { main: '#2563EB', bg: '#EFF6FF', dark: '#1E40AF' },
+    auction: { main: '#DC2626', bg: '#FEF2F2', dark: '#991B1B' },
+    industrial: { main: '#FF6B35', bg: '#FFF7ED' },
+    knowledge: { main: '#0066FF', bg: '#EFF6FF' },
+    factoryMarker: { main: '#6366F1', glow: 'rgba(99, 102, 241, 0.4)' },
+    warehouseMarker: { main: '#EA580C', glow: 'rgba(234, 88, 12, 0.4)' },
 };
 
-// 지목 추출 함수 (기존 DOM 마커와 동일)
-function getTypeLabel(propertyType?: string, jibun?: string): { label: string; color: string } {
-    if (propertyType && TYPE_INFO[propertyType]) {
-        return TYPE_INFO[propertyType];
+const SQM_PER_PYEONG = 3.3058;
+
+function getTypeInfo(propertyType?: string, jibun?: string): { label: string; color: string } {
+    if (propertyType && COLORS[propertyType as keyof typeof COLORS]) {
+        const c = COLORS[propertyType as keyof typeof COLORS];
+        if ('label' in c) return c;
     }
-    // 지번에서 지목 추출
-    if (jibun) {
-        if (jibun.includes('공장')) return { label: '공장', color: '#8B5CF6' };
-        if (jibun.includes('창고')) return { label: '창고', color: '#F59E0B' };
-    }
+    if (jibun?.includes('공장')) return COLORS.factory;
+    if (jibun?.includes('창고')) return COLORS.warehouse;
     return { label: '토지', color: '#6B7280' };
 }
 
-interface CachedSprite {
-    x: number;
-    y: number;
-    width: number;
-    height: number;
+function truncateName(name: string, maxLen = 8): string {
+    return name.length > maxLen ? name.slice(0, maxLen) + '…' : name;
 }
 
-const LAYER_ID = 'canvas-markers-layer';
-const ATLAS_SIZE = 4096; // 선명도를 위해 크기 증가
-const SPRITE_SCALE = 4; // 고해상도 스케일 (Retina 2x * 2)
-const SQM_PER_PYEONG = 3.3058;
-
-// ========== Canvas 마커 렌더러 ==========
+// ========== 렌더러 ==========
 
 export class CanvasMarkerRenderer {
     private mapboxGL: any;
-    private markers: MarkerData[] = [];
-    private sortedMarkers: MarkerData[] = []; // 정렬된 마커 캐시
+    private canvas: HTMLCanvasElement;
+    private ctx: CanvasRenderingContext2D;
+    private markers: AnyMarker[] = [];
     private selectedMarkerId: string | null = null;
-    private onClick: ((marker: MarkerData) => void) | null = null;
-    private isInitialized: boolean = false;
+    private onClick: ((marker: AnyMarker) => void) | null = null;
+    private hitAreas: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
-    // 스프라이트 아틀라스
-    private atlasCanvas: HTMLCanvasElement;
-    private atlasCtx: CanvasRenderingContext2D;
-    private spriteCache: Map<string, CachedSprite> = new Map();
-    private atlasNeedsUpdate: boolean = true;
-    private atlasBuilding: boolean = false; // 비동기 빌드 중
-    private textureNeedsUpload: boolean = false; // 텍스처 업로드 필요
-    private atlasCursor = { x: 0, y: 0, rowHeight: 0 };
-
-    // WebGL 리소스
-    private program: WebGLProgram | null = null;
-    private vertexBuffer: WebGLBuffer | null = null;
-    private texture: WebGLTexture | null = null;
-
-    // Attribute locations 캐시
-    private attribLocations: {
-        position: number;
-        texCoord: number;
-        size: number;
-        offset: number;
-    } | null = null;
-    private uniformLocations: {
-        resolution: WebGLUniformLocation | null;
-        texture: WebGLUniformLocation | null;
-    } | null = null;
-
-    // 재사용 가능한 버퍼
-    private vertexArray: Float32Array | null = null;
-    private vertexArraySize: number = 0;
-
-    // 클릭 감지용 바운드
-    private markerBounds: Map<string, { x: number; y: number; width: number; height: number }> = new Map();
+    private fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
 
     constructor(mapboxGL: any) {
         this.mapboxGL = mapboxGL;
 
-        // 아틀라스 Canvas 생성 (고해상도)
-        this.atlasCanvas = document.createElement('canvas');
-        this.atlasCanvas.width = ATLAS_SIZE;
-        this.atlasCanvas.height = ATLAS_SIZE;
-        const ctx = this.atlasCanvas.getContext('2d', {
-            alpha: true,
-            desynchronized: false,
-        });
-        if (!ctx) throw new Error('Canvas 2D context not available');
+        const mapCanvas = mapboxGL.getCanvas();
+        const dpr = window.devicePixelRatio || 1;
+        this.canvas = document.createElement('canvas');
 
-        // 선명도 설정
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = 'high';
+        const cssWidth = mapCanvas.clientWidth;
+        const cssHeight = mapCanvas.clientHeight;
+        this.canvas.style.cssText = `position:absolute;top:0;left:0;pointer-events:none;width:${cssWidth}px;height:${cssHeight}px;`;
+        this.canvas.width = cssWidth * dpr;
+        this.canvas.height = cssHeight * dpr;
+        this.ctx = this.canvas.getContext('2d')!;
 
-        this.atlasCtx = ctx;
+        mapCanvas.parentElement?.appendChild(this.canvas);
+        this.bindEvents();
 
-        // Custom Layer 추가
-        this.addCustomLayer();
-
-        // 클릭 이벤트
-        mapboxGL.on('click', this.handleMapClick);
-
-        logger.log('🎨 [CanvasMarkerRenderer] 초기화 완료');
+        logger.log('🎨 [CanvasMarkerRenderer] 초기화');
     }
 
-    private addCustomLayer() {
-        const self = this;
-
-        const customLayer = {
-            id: LAYER_ID,
-            type: 'custom' as const,
-            renderingMode: '2d' as const,
-            minzoom: ZOOM_PARCEL.min, // 필지 레벨에서만 표시
-
-            onAdd(_map: any, gl: WebGLRenderingContext) {
-                // Vertex Shader - 화면 좌표 기준 빌보드
-                const vertexSource = `
-                    attribute vec2 a_position;
-                    attribute vec2 a_texCoord;
-                    attribute vec2 a_size;
-                    attribute vec2 a_offset;
-                    uniform vec2 u_resolution;
-                    varying vec2 v_texCoord;
-                    void main() {
-                        vec2 pixelPos = a_position + a_offset * a_size;
-                        vec2 clipSpace = (pixelPos / u_resolution) * 2.0 - 1.0;
-                        clipSpace.y = -clipSpace.y;
-                        gl_Position = vec4(clipSpace, 0.0, 1.0);
-                        v_texCoord = a_texCoord;
-                    }
-                `;
-
-                const fragmentSource = `
-                    precision mediump float;
-                    uniform sampler2D u_texture;
-                    varying vec2 v_texCoord;
-                    void main() {
-                        gl_FragColor = texture2D(u_texture, v_texCoord);
-                    }
-                `;
-
-                // Shader 컴파일
-                const vertexShader = gl.createShader(gl.VERTEX_SHADER)!;
-                gl.shaderSource(vertexShader, vertexSource);
-                gl.compileShader(vertexShader);
-
-                const fragmentShader = gl.createShader(gl.FRAGMENT_SHADER)!;
-                gl.shaderSource(fragmentShader, fragmentSource);
-                gl.compileShader(fragmentShader);
-
-                self.program = gl.createProgram()!;
-                gl.attachShader(self.program, vertexShader);
-                gl.attachShader(self.program, fragmentShader);
-                gl.linkProgram(self.program);
-
-                self.vertexBuffer = gl.createBuffer();
-
-                self.texture = gl.createTexture();
-                gl.bindTexture(gl.TEXTURE_2D, self.texture);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-                // 밉맵 사용으로 축소 시 선명도 향상
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR_MIPMAP_LINEAR);
-                gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
-
-                // Attribute/Uniform locations 캐시
-                self.attribLocations = {
-                    position: gl.getAttribLocation(self.program, 'a_position'),
-                    texCoord: gl.getAttribLocation(self.program, 'a_texCoord'),
-                    size: gl.getAttribLocation(self.program, 'a_size'),
-                    offset: gl.getAttribLocation(self.program, 'a_offset'),
-                };
-                self.uniformLocations = {
-                    resolution: gl.getUniformLocation(self.program, 'u_resolution'),
-                    texture: gl.getUniformLocation(self.program, 'u_texture'),
-                };
-
-                self.isInitialized = true;
-            },
-
-            render(gl: WebGLRenderingContext) {
-                if (!self.isInitialized || !self.program || !self.attribLocations || !self.uniformLocations) return;
-                if (self.sortedMarkers.length === 0) return;
-
-                // 줌 레벨 체크 (14 미만에서는 렌더링 안함)
-                const currentZoom = self.mapboxGL.getZoom();
-                if (currentZoom < ZOOM_PARCEL.min) return;
-
-                // 비동기 아틀라스 빌드 시작
-                if (self.atlasNeedsUpdate && !self.atlasBuilding) {
-                    self.atlasNeedsUpdate = false;
-                    self.atlasBuilding = true;
-                    self.buildAtlasAsync().then(() => {
-                        self.atlasBuilding = false;
-                        self.textureNeedsUpload = true;
-                        self.mapboxGL.triggerRepaint();
-                    });
-                }
-
-                // 텍스처 업로드 (빌드 완료 후)
-                if (self.textureNeedsUpload) {
-                    gl.bindTexture(gl.TEXTURE_2D, self.texture);
-                    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, gl.RGBA, gl.UNSIGNED_BYTE, self.atlasCanvas);
-                    gl.generateMipmap(gl.TEXTURE_2D);
-                    self.textureNeedsUpload = false;
-                }
-
-                // 뷰포트 필터링
-                const bounds = self.mapboxGL.getBounds();
-                const minLng = bounds.getWest();
-                const maxLng = bounds.getEast();
-                const minLat = bounds.getSouth();
-                const maxLat = bounds.getNorth();
-
-                // 버퍼 크기 계산 (마커당 6 vertices * 8 floats)
-                const maxVertices = self.sortedMarkers.length * 6 * 8;
-                if (!self.vertexArray || self.vertexArraySize < maxVertices) {
-                    self.vertexArray = new Float32Array(maxVertices);
-                    self.vertexArraySize = maxVertices;
-                }
-
-                let vertexCount = 0;
-                self.markerBounds.clear();
-
-                for (const marker of self.sortedMarkers) {
-                    if (marker.lng < minLng || marker.lng > maxLng ||
-                        marker.lat < minLat || marker.lat > maxLat) continue;
-
-                    const spriteKey = self.getSpriteKey(marker);
-                    const sprite = self.spriteCache.get(spriteKey);
-                    if (!sprite) continue;
-
-                    const screenPoint = self.mapboxGL.project([marker.lng, marker.lat]);
-                    const x = screenPoint.x;
-                    const y = screenPoint.y;
-                    const w = sprite.width / SPRITE_SCALE;
-                    const h = sprite.height / SPRITE_SCALE;
-
-                    const u0 = sprite.x / ATLAS_SIZE;
-                    const v0 = sprite.y / ATLAS_SIZE;
-                    const u1 = (sprite.x + sprite.width) / ATLAS_SIZE;
-                    const v1 = (sprite.y + sprite.height) / ATLAS_SIZE;
-
-                    // 6 vertices per quad - 직접 배열에 쓰기
-                    const baseIdx = vertexCount * 8;
-                    const arr = self.vertexArray!;
-
-                    // vertex 0: [-0.5, -0.5]
-                    arr[baseIdx] = x; arr[baseIdx + 1] = y;
-                    arr[baseIdx + 2] = u0; arr[baseIdx + 3] = v0;
-                    arr[baseIdx + 4] = w; arr[baseIdx + 5] = h;
-                    arr[baseIdx + 6] = -0.5; arr[baseIdx + 7] = -0.5;
-
-                    // vertex 1: [0.5, -0.5]
-                    arr[baseIdx + 8] = x; arr[baseIdx + 9] = y;
-                    arr[baseIdx + 10] = u1; arr[baseIdx + 11] = v0;
-                    arr[baseIdx + 12] = w; arr[baseIdx + 13] = h;
-                    arr[baseIdx + 14] = 0.5; arr[baseIdx + 15] = -0.5;
-
-                    // vertex 2: [-0.5, 0.5]
-                    arr[baseIdx + 16] = x; arr[baseIdx + 17] = y;
-                    arr[baseIdx + 18] = u0; arr[baseIdx + 19] = v1;
-                    arr[baseIdx + 20] = w; arr[baseIdx + 21] = h;
-                    arr[baseIdx + 22] = -0.5; arr[baseIdx + 23] = 0.5;
-
-                    // vertex 3: [0.5, -0.5]
-                    arr[baseIdx + 24] = x; arr[baseIdx + 25] = y;
-                    arr[baseIdx + 26] = u1; arr[baseIdx + 27] = v0;
-                    arr[baseIdx + 28] = w; arr[baseIdx + 29] = h;
-                    arr[baseIdx + 30] = 0.5; arr[baseIdx + 31] = -0.5;
-
-                    // vertex 4: [0.5, 0.5]
-                    arr[baseIdx + 32] = x; arr[baseIdx + 33] = y;
-                    arr[baseIdx + 34] = u1; arr[baseIdx + 35] = v1;
-                    arr[baseIdx + 36] = w; arr[baseIdx + 37] = h;
-                    arr[baseIdx + 38] = 0.5; arr[baseIdx + 39] = 0.5;
-
-                    // vertex 5: [-0.5, 0.5]
-                    arr[baseIdx + 40] = x; arr[baseIdx + 41] = y;
-                    arr[baseIdx + 42] = u0; arr[baseIdx + 43] = v1;
-                    arr[baseIdx + 44] = w; arr[baseIdx + 45] = h;
-                    arr[baseIdx + 46] = -0.5; arr[baseIdx + 47] = 0.5;
-
-                    vertexCount += 6;
-                    self.markerBounds.set(marker.id, { x: x - w / 2, y: y - h / 2, width: w, height: h });
-                }
-
-                if (vertexCount === 0) return;
-
-                const canvas = self.mapboxGL.getCanvas();
-                const locs = self.attribLocations;
-                const unis = self.uniformLocations;
-
-                gl.useProgram(self.program);
-                gl.bindBuffer(gl.ARRAY_BUFFER, self.vertexBuffer);
-                // 필요한 부분만 업로드
-                gl.bufferData(gl.ARRAY_BUFFER, self.vertexArray!.subarray(0, vertexCount * 8), gl.DYNAMIC_DRAW);
-
-                const STRIDE = 8 * 4;
-                gl.enableVertexAttribArray(locs.position);
-                gl.vertexAttribPointer(locs.position, 2, gl.FLOAT, false, STRIDE, 0);
-
-                gl.enableVertexAttribArray(locs.texCoord);
-                gl.vertexAttribPointer(locs.texCoord, 2, gl.FLOAT, false, STRIDE, 8);
-
-                gl.enableVertexAttribArray(locs.size);
-                gl.vertexAttribPointer(locs.size, 2, gl.FLOAT, false, STRIDE, 16);
-
-                gl.enableVertexAttribArray(locs.offset);
-                gl.vertexAttribPointer(locs.offset, 2, gl.FLOAT, false, STRIDE, 24);
-
-                gl.uniform2fv(unis.resolution, [canvas.width, canvas.height]);
-                gl.uniform1i(unis.texture, 0);
-
-                gl.activeTexture(gl.TEXTURE0);
-                gl.bindTexture(gl.TEXTURE_2D, self.texture);
-                gl.enable(gl.BLEND);
-                gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
-                gl.drawArrays(gl.TRIANGLES, 0, vertexCount);
-            },
-        };
-
-        this.mapboxGL.addLayer(customLayer);
+    private bindEvents() {
+        this.mapboxGL.on('render', this.render);
+        this.mapboxGL.on('resize', this.handleResize);
+        this.mapboxGL.getCanvas().addEventListener('click', this.handleClick);
     }
 
-    private getSpriteKey(marker: MarkerData): string {
-        const isSelected = marker.id === this.selectedMarkerId;
-        const typeInfo = getTypeLabel(marker.propertyType, marker.jibun);
+    private handleResize = () => {
+        const mapCanvas = this.mapboxGL.getCanvas();
+        const dpr = window.devicePixelRatio || 1;
+        const cssWidth = mapCanvas.clientWidth;
+        const cssHeight = mapCanvas.clientHeight;
+        this.canvas.style.width = `${cssWidth}px`;
+        this.canvas.style.height = `${cssHeight}px`;
+        this.canvas.width = cssWidth * dpr;
+        this.canvas.height = cssHeight * dpr;
+        this.render();
+    };
 
-        // 거래일자 (YY.MM)
-        let dateStr = '';
-        if (marker.transactionDate) {
-            const d = new Date(marker.transactionDate);
-            dateStr = `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, '0')}`;
-        }
-
-        // 면적 (평)
-        const areaPyeong = marker.area && marker.area > 0
-            ? Math.round(marker.area / SQM_PER_PYEONG).toString()
-            : '';
-
-        // 최근 거래 여부
-        let isRecent = false;
-        if (marker.transactionDate) {
-            const txDate = new Date(marker.transactionDate);
-            const threeMonthsAgo = new Date();
-            threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
-            isRecent = txDate >= threeMonthsAgo;
-        }
-
-        return `${isSelected ? 'sel' : 'def'}:${typeInfo.label}:${typeInfo.color}:${marker.price}:${dateStr}:${areaPyeong}:${isRecent ? 'N' : ''}`;
-    }
-
-    private async buildAtlasAsync(): Promise<void> {
-        const ctx = this.atlasCtx;
-        const neededKeys = new Set<string>();
-
-        for (const marker of this.markers) {
-            neededKeys.add(this.getSpriteKey(marker));
-        }
-
-        // 아틀라스 초기화 (새로운 마커 세트)
-        ctx.clearRect(0, 0, ATLAS_SIZE, ATLAS_SIZE);
-        this.spriteCache.clear();
-        this.atlasCursor = { x: 0, y: 0, rowHeight: 0 };
-
-        // 순차 처리 (atlasCursor 충돌 방지) - DOM 캡처는 순서대로!
-        const keysArray = Array.from(neededKeys);
-
-        for (const key of keysArray) {
-            const parts = key.split(':');
-            const isSelected = parts[0] === 'sel';
-            const typeLabel = parts[1];
-            const typeColor = parts[2];
-            const price = parts[3];
-            const dateStr = parts[4];
-            const areaPyeong = parts[5];
-            const isRecent = parts[6] === 'N';
-
-            // DOM 캡처로 픽셀 퍼펙트 마커 생성
-            const sprite = await this.drawMarkerSpriteFromDOM(ctx, {
-                isSelected,
-                typeLabel,
-                typeColor,
-                price,
-                dateStr,
-                areaPyeong,
-                isRecent,
-            });
-
-            if (sprite) {
-                this.spriteCache.set(key, sprite);
-            }
-        }
-
-        logger.log(`🎨 [CanvasMarkerRenderer] 아틀라스 빌드 완료: ${this.spriteCache.size}개 스프라이트`);
-    }
-
-    // html-to-image로 실제 DOM을 캡처하여 Canvas에 그리기
-    private async drawMarkerSpriteFromDOM(
-        ctx: CanvasRenderingContext2D,
-        data: {
-            isSelected: boolean;
-            typeLabel: string;
-            typeColor: string;
-            price: string;
-            dateStr: string;
-            areaPyeong: string;
-            isRecent: boolean;
-        }
-    ): Promise<CachedSprite | null> {
-        const scale = SPRITE_SCALE;
-
-        // DOM 마커 생성 (UnifiedMarkerLayer와 동일한 HTML)
-        // 그림자와 N뱃지가 잘리지 않도록 wrapper에 padding 추가
-        const container = document.createElement('div');
-        container.style.cssText = `
-            position: fixed;
-            left: -9999px;
-            top: -9999px;
-            z-index: -1;
-        `;
-
-        // wrapper div로 그림자/뱃지 공간 확보 (padding 20px)
-        const wrapperPadding = 20;
-
-        // N 뱃지
-        const newBadgeHTML = data.isRecent && !data.isSelected ? `
-            <span style="
-                position: absolute;
-                top: -6px;
-                right: -6px;
-                background: #EF4444;
-                color: #fff;
-                font-size: 9px;
-                font-weight: 700;
-                padding: 2px 4px;
-                border-radius: 3px;
-                box-shadow: 0 1px 3px rgba(0,0,0,0.2);
-                border: 1.5px solid #fff;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">N</span>
-        ` : '';
-
-        // 2줄 (날짜, 평수)
-        const secondLineHTML = (data.dateStr || data.areaPyeong) ? `
-            <div style="
-                font-size: 9px;
-                color: #9CA3AF;
-                margin-top: 1px;
-                display: flex;
-                gap: 4px;
-                justify-content: center;
-                font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            ">
-                ${data.dateStr ? `<span>${data.dateStr}</span>` : ''}
-                ${data.areaPyeong ? `<span>${data.areaPyeong}평</span>` : ''}
-            </div>
-        ` : '';
-
-        const typeLabelHTML = `<span style="
-            font-size: 10px;
-            color: ${data.typeColor};
-            font-weight: 500;
-            margin-right: 4px;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        ">${data.typeLabel}</span>`;
-
-        const markerStyle = data.isSelected ? `
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 8px 10px;
-            background: #ffffff;
-            border-radius: 6px;
-            border: 2px solid #3B82F6;
-            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
-            position: relative;
-            line-height: 1.2;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        ` : `
-            display: inline-flex;
-            flex-direction: column;
-            align-items: center;
-            padding: 4px 10px;
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 100px;
-            border: 1px solid rgba(200, 200, 200, 0.8);
-            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
-            position: relative;
-            line-height: 1.2;
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        `;
-
-        const priceStyle = data.isSelected
-            ? `font-weight: 600; font-size: 15px; color: #1F2937; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`
-            : `font-weight: 500; font-size: 12px; color: #374151; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;`;
-
-        // wrapper로 감싸서 그림자/N뱃지 공간 확보
-        container.innerHTML = `
-            <div style="padding: ${wrapperPadding}px; display: inline-block;">
-                <div style="${markerStyle}">
-                    ${newBadgeHTML}
-                    <div style="display: flex; align-items: center; white-space: nowrap;">
-                        ${typeLabelHTML}
-                        <span style="${priceStyle}">${data.price}</span>
-                    </div>
-                    ${secondLineHTML}
-                </div>
-            </div>
-        `;
-
-        document.body.appendChild(container);
-
-        try {
-            // wrapper를 캡처 (그림자/뱃지 포함)
-            const wrapperEl = container.firstElementChild as HTMLElement;
-
-            // html-to-image로 캡처 (wrapper 전체를 캡처해서 그림자/뱃지 포함)
-            const dataUrl = await toPng(wrapperEl, {
-                pixelRatio: scale,
-                backgroundColor: undefined, // 투명 배경
-            });
-
-            // 이미지 로드
-            const img = new Image();
-            await new Promise<void>((resolve, reject) => {
-                img.onload = () => resolve();
-                img.onerror = reject;
-                img.src = dataUrl;
-            });
-
-            // wrapper에 이미 padding이 포함되어 있으므로 추가 padding 불필요
-            const width = img.width;
-            const height = img.height;
-
-            // 아틀라스 공간 체크
-            if (this.atlasCursor.x + width > ATLAS_SIZE) {
-                this.atlasCursor.x = 0;
-                this.atlasCursor.y += this.atlasCursor.rowHeight + 4;
-                this.atlasCursor.rowHeight = 0;
-            }
-
-            if (this.atlasCursor.y + height > ATLAS_SIZE) {
-                document.body.removeChild(container);
-                logger.warn('[CanvasMarkerRenderer] 아틀라스 공간 부족');
-                return null;
-            }
-
-            const spriteX = this.atlasCursor.x;
-            const spriteY = this.atlasCursor.y;
-
-            // Canvas에 그리기 (wrapper 전체 이미지)
-            ctx.drawImage(img, spriteX, spriteY);
-
-            // 커서 업데이트
-            this.atlasCursor.x += width + 4;
-            this.atlasCursor.rowHeight = Math.max(this.atlasCursor.rowHeight, height);
-
-            document.body.removeChild(container);
-            return { x: spriteX, y: spriteY, width, height };
-        } catch (error) {
-            document.body.removeChild(container);
-            logger.error('[CanvasMarkerRenderer] DOM 캡처 실패:', error);
-            throw error; // 폴백 없이 실패 전파
-        }
-    }
-
-    private handleMapClick = (e: any) => {
+    private handleClick = (e: MouseEvent) => {
         if (!this.onClick) return;
 
-        const { x, y } = e.point;
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
 
-        for (const marker of this.markers) {
-            const bounds = this.markerBounds.get(marker.id);
-            if (!bounds) continue;
-
-            if (x >= bounds.x && x <= bounds.x + bounds.width &&
-                y >= bounds.y && y <= bounds.y + bounds.height) {
-                this.onClick(marker);
-                return;
+        for (let i = this.hitAreas.length - 1; i >= 0; i--) {
+            const h = this.hitAreas[i];
+            if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
+                const marker = this.markers.find(m => m.id === h.id);
+                if (marker) {
+                    this.onClick(marker);
+                    return;
+                }
             }
         }
     };
 
-    // ========== 외부 API ==========
+    private render = () => {
+        const ctx = this.ctx;
+        const dpr = window.devicePixelRatio || 1;
 
-    updateMarkers(markers: MarkerData[]) {
-        this.markers = markers;
-        // 정렬을 여기서 한 번만 수행 (남쪽 마커가 위에 오도록)
-        this.sortedMarkers = [...markers].sort((a, b) => b.lat - a.lat);
-        this.atlasNeedsUpdate = true;
-        this.mapboxGL.triggerRepaint();
+        ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+        this.hitAreas = [];
+
+        if (this.markers.length === 0) return;
+
+        const bounds = this.mapboxGL.getBounds();
+        const minLng = bounds.getWest();
+        const maxLng = bounds.getEast();
+        const minLat = bounds.getSouth();
+        const maxLat = bounds.getNorth();
+
+        // 남쪽부터 그리기 (z-order)
+        const sorted = [...this.markers]
+            .filter(m => m.lng >= minLng && m.lng <= maxLng && m.lat >= minLat && m.lat <= maxLat)
+            .sort((a, b) => b.lat - a.lat);
+
+        for (const m of sorted) {
+            const pt = this.mapboxGL.project([m.lng, m.lat]);
+            const isSelected = m.id === this.selectedMarkerId;
+
+            switch (m.type) {
+                case 'transaction':
+                    this.drawTransaction(ctx, m, pt, dpr, isSelected);
+                    break;
+                case 'listing':
+                    this.drawListing(ctx, m, pt, dpr, isSelected);
+                    break;
+                case 'auction':
+                    this.drawAuction(ctx, m, pt, dpr, isSelected);
+                    break;
+                case 'region-cluster':
+                    this.drawRegionCluster(ctx, m, pt, dpr);
+                    break;
+                case 'listing-cluster':
+                    this.drawListingCluster(ctx, m, pt, dpr);
+                    break;
+                case 'auction-cluster':
+                    this.drawAuctionCluster(ctx, m, pt, dpr);
+                    break;
+                case 'industrial':
+                    this.drawIndustrial(ctx, m, pt, dpr, isSelected);
+                    break;
+                case 'knowledge':
+                    this.drawKnowledge(ctx, m, pt, dpr, isSelected);
+                    break;
+                case 'factory':
+                    this.drawFactory(ctx, m, pt, dpr);
+                    break;
+                case 'warehouse':
+                    this.drawWarehouse(ctx, m, pt, dpr);
+                    break;
+                case 'highlight':
+                    this.drawHighlight(ctx, m, pt, dpr);
+                    break;
+            }
+        }
+    };
+
+    // ========== 실거래 마커 ==========
+    private drawTransaction(ctx: CanvasRenderingContext2D, m: TransactionMarker, pt: { x: number; y: number }, dpr: number, isSelected: boolean) {
+        const typeInfo = getTypeInfo(m.propertyType, m.jibun);
+
+        let dateStr = '';
+        let isRecent = false;
+        if (m.transactionDate) {
+            const d = new Date(m.transactionDate);
+            dateStr = `${String(d.getFullYear()).slice(2)}.${String(d.getMonth() + 1).padStart(2, '0')}`;
+            const ago = new Date();
+            ago.setMonth(ago.getMonth() - 3);
+            isRecent = d >= ago;
+        }
+        const areaPyeong = m.area ? `${Math.round(m.area / SQM_PER_PYEONG)}평` : '';
+
+        // 텍스트 측정
+        ctx.font = `500 ${10 * dpr}px ${this.fontFamily}`;
+        const typeW = ctx.measureText(typeInfo.label).width;
+
+        ctx.font = `${isSelected ? 600 : 500} ${(isSelected ? 15 : 12) * dpr}px ${this.fontFamily}`;
+        const priceW = ctx.measureText(m.price).width;
+
+        ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+        let row2W = 0;
+        if (dateStr) row2W += ctx.measureText(dateStr).width;
+        if (areaPyeong) row2W += ctx.measureText(areaPyeong).width;
+        if (dateStr && areaPyeong) row2W += 4 * dpr;
+
+        // 크기 계산
+        const lineHeight = 1.2;
+        const paddingX = 10 * dpr;
+        const paddingY = (isSelected ? 8 : 4) * dpr;
+        const gap = 4 * dpr;
+
+        const row1W = typeW + gap + priceW;
+        const contentW = Math.max(row1W, row2W);
+        const markerW = contentW + paddingX * 2;
+
+        const row1FontSize = (isSelected ? 15 : 12) * dpr;
+        const row2FontSize = 9 * dpr;
+        const row1H = row1FontSize * lineHeight;
+        const row2H = (dateStr || areaPyeong) ? row2FontSize * lineHeight : 0;
+        const rowGap = (dateStr || areaPyeong) ? 1 * dpr : 0;
+        const markerH = paddingY * 2 + row1H + rowGap + row2H;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = isSelected ? 'rgba(59, 130, 246, 0.3)' : 'rgba(0, 0, 0, 0.15)';
+        ctx.shadowBlur = (isSelected ? 12 : 6) * dpr;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = (isSelected ? 4 : 2) * dpr;
+
+        // 배경
+        const radius = isSelected ? 6 * dpr : markerH / 2;
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, radius);
+        ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.95)';
+        ctx.fill();
+
+        // 테두리
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = isSelected ? '#3B82F6' : 'rgba(200, 200, 200, 0.8)';
+        ctx.lineWidth = (isSelected ? 2 : 1) * dpr;
+        ctx.stroke();
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        const row1Y = my + paddingY + row1H / 2;
+
+        ctx.font = `500 ${10 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = typeInfo.color;
+        ctx.fillText(typeInfo.label, mx + paddingX, row1Y);
+
+        ctx.font = `${isSelected ? 600 : 500} ${(isSelected ? 15 : 12) * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = isSelected ? '#1F2937' : '#374151';
+        ctx.fillText(m.price, mx + paddingX + typeW + gap, row1Y);
+
+        if (dateStr || areaPyeong) {
+            const row2Y = my + paddingY + row1H + rowGap + row2H / 2;
+            ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#9CA3AF';
+
+            let textX = mx + paddingX + (contentW - row2W) / 2;
+            if (dateStr) {
+                ctx.fillText(dateStr, textX, row2Y);
+                textX += ctx.measureText(dateStr).width + 4 * dpr;
+            }
+            if (areaPyeong) {
+                ctx.fillText(areaPyeong, textX, row2Y);
+            }
+        }
+
+        // N 뱃지
+        if (isRecent && !isSelected) {
+            this.drawNBadge(ctx, mx + markerW, my, dpr);
+        }
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
     }
 
-    setSelectedMarkerId(markerId: string | null) {
-        if (this.selectedMarkerId !== markerId) {
-            this.selectedMarkerId = markerId;
-            this.atlasNeedsUpdate = true;
-            this.mapboxGL.triggerRepaint();
+    // ========== 매물 마커 (pill 형태, 심플) ==========
+    private drawListing(ctx: CanvasRenderingContext2D, m: ListingMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+        const dealLabel = m.dealType === '임대' ? '임대' : m.dealType === '분양' ? '분양' : m.dealType === '전세' ? '전세' : '매매';
+
+        // 텍스트 측정
+        ctx.font = `600 ${10 * dpr}px ${this.fontFamily}`;
+        const dealW = ctx.measureText(dealLabel).width;
+
+        ctx.font = `600 ${12 * dpr}px ${this.fontFamily}`;
+        const priceW = ctx.measureText(m.price).width;
+
+        ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+        const areaW = ctx.measureText(m.area).width;
+
+        // 크기 계산 (실거래 마커와 비슷한 구조)
+        const lineHeight = 1.2;
+        const paddingX = 10 * dpr;
+        const paddingY = 4 * dpr;
+        const gap = 4 * dpr;
+
+        const row1W = dealW + gap + priceW;
+        const contentW = Math.max(row1W, areaW);
+        const markerW = contentW + paddingX * 2;
+
+        const row1FontSize = 12 * dpr;
+        const row2FontSize = 9 * dpr;
+        const row1H = row1FontSize * lineHeight;
+        const row2H = m.area ? row2FontSize * lineHeight : 0;
+        const rowGap = m.area ? 1 * dpr : 0;
+        const markerH = paddingY * 2 + row1H + rowGap + row2H;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH;
+
+        ctx.save();
+
+        // 그림자 (파란색 계열)
+        ctx.shadowColor = 'rgba(37, 99, 235, 0.25)';
+        ctx.shadowBlur = 8 * dpr;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경 (pill 형태)
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, markerH / 2);
+        ctx.fillStyle = '#2563EB';  // 파란 배경
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        const row1Y = my + paddingY + row1H / 2;
+
+        // 거래유형 (흰색, 살짝 투명)
+        ctx.font = `500 ${10 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillText(dealLabel, mx + paddingX, row1Y);
+
+        // 가격 (흰색, 굵게)
+        ctx.font = `600 ${12 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(m.price, mx + paddingX + dealW + gap, row1Y);
+
+        // 면적 (흰색, 투명)
+        if (m.area) {
+            const row2Y = my + paddingY + row1H + rowGap + row2H / 2;
+            ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.textAlign = 'center';
+            ctx.fillText(m.area, mx + markerW / 2, row2Y);
+            ctx.textAlign = 'left';
+        }
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
+    }
+
+    // ========== 경매 마커 (pill 형태, 심플) ==========
+    private drawAuction(ctx: CanvasRenderingContext2D, m: AuctionMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+        // 유찰 횟수가 있으면 표시
+        const failBadge = m.failCount && m.failCount > 0 ? `${m.failCount}회` : '';
+
+        // 텍스트 측정
+        ctx.font = `600 ${10 * dpr}px ${this.fontFamily}`;
+        const labelW = ctx.measureText('경매').width;
+
+        ctx.font = `600 ${12 * dpr}px ${this.fontFamily}`;
+        const priceW = ctx.measureText(m.price).width;
+
+        ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+        const areaW = ctx.measureText(m.area).width;
+
+        // 크기 계산 (실거래 마커와 비슷한 구조)
+        const lineHeight = 1.2;
+        const paddingX = 10 * dpr;
+        const paddingY = 4 * dpr;
+        const gap = 4 * dpr;
+
+        const row1W = labelW + gap + priceW;
+        const contentW = Math.max(row1W, areaW);
+        const markerW = contentW + paddingX * 2;
+
+        const row1FontSize = 12 * dpr;
+        const row2FontSize = 9 * dpr;
+        const row1H = row1FontSize * lineHeight;
+        const row2H = m.area ? row2FontSize * lineHeight : 0;
+        const rowGap = m.area ? 1 * dpr : 0;
+        const markerH = paddingY * 2 + row1H + rowGap + row2H;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH;
+
+        ctx.save();
+
+        // 그림자 (빨간색 계열)
+        ctx.shadowColor = 'rgba(220, 38, 38, 0.25)';
+        ctx.shadowBlur = 8 * dpr;
+        ctx.shadowOffsetX = 0;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경 (pill 형태)
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, markerH / 2);
+        ctx.fillStyle = '#DC2626';  // 빨간 배경
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        const row1Y = my + paddingY + row1H / 2;
+
+        // 경매 라벨 (흰색, 살짝 투명)
+        ctx.font = `500 ${10 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = 'rgba(255, 255, 255, 0.85)';
+        ctx.fillText('경매', mx + paddingX, row1Y);
+
+        // 가격 (흰색, 굵게)
+        ctx.font = `600 ${12 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(m.price, mx + paddingX + labelW + gap, row1Y);
+
+        // 면적 (흰색, 투명)
+        if (m.area) {
+            const row2Y = my + paddingY + row1H + rowGap + row2H / 2;
+            ctx.font = `400 ${9 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.7)';
+            ctx.textAlign = 'center';
+            ctx.fillText(m.area, mx + markerW / 2, row2Y);
+            ctx.textAlign = 'left';
+        }
+
+        // 유찰 뱃지 (오른쪽 상단)
+        if (failBadge) {
+            ctx.font = `700 ${8 * dpr}px ${this.fontFamily}`;
+            const badgeTextW = ctx.measureText(failBadge).width;
+            const badgePadX = 4 * dpr;
+            const badgePadY = 2 * dpr;
+            const badgeW = badgeTextW + badgePadX * 2;
+            const badgeH = 8 * dpr + badgePadY * 2;
+            const badgeX = mx + markerW + 4 * dpr - badgeW;
+            const badgeY = my - 4 * dpr;
+
+            // 뱃지 배경 (노란색)
+            ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+            ctx.shadowBlur = 2 * dpr;
+            ctx.shadowOffsetY = 1 * dpr;
+
+            ctx.beginPath();
+            ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3 * dpr);
+            ctx.fillStyle = '#FCD34D';
+            ctx.fill();
+
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#F59E0B';
+            ctx.lineWidth = 1 * dpr;
+            ctx.stroke();
+
+            // 뱃지 텍스트
+            ctx.fillStyle = '#92400E';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(failBadge, badgeX + badgeW / 2, badgeY + badgeH / 2);
+            ctx.textAlign = 'left';
+        }
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
+    }
+
+    // ========== 행정구역 클러스터 마커 ==========
+    private drawRegionCluster(ctx: CanvasRenderingContext2D, m: RegionClusterMarker, pt: { x: number; y: number }, dpr: number) {
+        const hasListing = m.listingCount > 0;
+        const hasAuction = m.auctionCount > 0;
+
+        // 텍스트 측정
+        ctx.font = `500 ${12 * dpr}px ${this.fontFamily}`;
+        const nameW = ctx.measureText(m.regionName).width;
+
+        ctx.font = `600 ${14 * dpr}px ${this.fontFamily}`;
+        const listingNumW = hasListing ? ctx.measureText(String(m.listingCount)).width : 0;
+        const auctionNumW = hasAuction ? ctx.measureText(String(m.auctionCount)).width : 0;
+
+        ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+        const listingLabelW = hasListing ? ctx.measureText('매물').width + 3 * dpr : 0;
+        const auctionLabelW = hasAuction ? ctx.measureText('경매').width + 3 * dpr : 0;
+        const dividerW = (hasListing && hasAuction) ? 16 * dpr : 0;
+
+        const countsW = listingNumW + listingLabelW + dividerW + auctionNumW + auctionLabelW;
+        const contentW = Math.max(nameW, countsW);
+
+        const paddingX = 12 * dpr;
+        const paddingY = 8 * dpr;
+        const markerW = contentW + paddingX * 2;
+        const markerH = paddingY * 2 + 12 * dpr + 3 * dpr + 14 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH / 2;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+        ctx.shadowBlur = 4 * dpr;
+        ctx.shadowOffsetY = 1 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 지역명
+        ctx.textBaseline = 'middle';
+        ctx.font = `500 ${12 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#64748B';
+        ctx.fillText(m.regionName, mx + paddingX + (contentW - nameW) / 2, my + paddingY + 6 * dpr);
+
+        // 카운트
+        const countY = my + paddingY + 12 * dpr + 3 * dpr + 7 * dpr;
+        let countX = mx + paddingX + (contentW - countsW) / 2;
+
+        if (hasListing) {
+            ctx.font = `600 ${14 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#2563EB';
+            ctx.fillText(String(m.listingCount), countX, countY);
+            countX += listingNumW;
+
+            ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('매물', countX + 3 * dpr, countY);
+            countX += listingLabelW;
+        }
+
+        if (hasListing && hasAuction) {
+            ctx.fillStyle = '#E2E8F0';
+            ctx.fillText('|', countX + 4 * dpr, countY);
+            countX += dividerW;
+        }
+
+        if (hasAuction) {
+            ctx.font = `600 ${14 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#DC2626';
+            ctx.fillText(String(m.auctionCount), countX, countY);
+            countX += auctionNumW;
+
+            ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#64748B';
+            ctx.fillText('경매', countX + 3 * dpr, countY);
+        }
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
+    }
+
+    // ========== 매물 클러스터 마커 ==========
+    private drawListingCluster(ctx: CanvasRenderingContext2D, m: ListingClusterMarker, pt: { x: number; y: number }, dpr: number) {
+        const { main } = COLORS.listing;
+
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        const countW = ctx.measureText(String(m.count)).width;
+
+        ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+        const labelW = ctx.measureText('매물').width;
+
+        const paddingX = 10 * dpr;
+        const paddingY = 5 * dpr;
+        const gap = 4 * dpr;
+        const markerW = countW + gap + labelW + paddingX * 2;
+        const markerH = paddingY * 2 + 13 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH / 2;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        // 테두리
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = main;
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.stroke();
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        const textY = my + markerH / 2;
+
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#2563EB';
+        ctx.fillText(String(m.count), mx + paddingX, textY);
+
+        ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#64748B';
+        ctx.fillText('매물', mx + paddingX + countW + gap, textY);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
+    }
+
+    // ========== 경매 클러스터 마커 ==========
+    private drawAuctionCluster(ctx: CanvasRenderingContext2D, m: AuctionClusterMarker, pt: { x: number; y: number }, dpr: number) {
+        const { main } = COLORS.auction;
+
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        const countW = ctx.measureText(String(m.count)).width;
+
+        ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+        const labelW = ctx.measureText('경매').width;
+
+        const paddingX = 10 * dpr;
+        const paddingY = 5 * dpr;
+        const gap = 4 * dpr;
+        const markerW = countW + gap + labelW + paddingX * 2;
+        const markerH = paddingY * 2 + 13 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH / 2;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = main;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        const textY = my + markerH / 2;
+
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(String(m.count), mx + paddingX, textY);
+
+        ctx.font = `400 ${11 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = 'rgba(255,255,255,0.9)';
+        ctx.fillText('경매', mx + paddingX + countW + gap, textY);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: markerH / dpr });
+    }
+
+    // ========== 산업단지 마커 ==========
+    private drawIndustrial(ctx: CanvasRenderingContext2D, m: IndustrialMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+        const { main } = COLORS.industrial;
+        const displayName = truncateName(m.name);
+
+        ctx.font = `600 ${11 * dpr}px ${this.fontFamily}`;
+        const nameW = ctx.measureText(displayName).width;
+
+        const paddingX = 8 * dpr;
+        const paddingY = 5 * dpr;
+        const iconW = 12 * dpr;
+        const gap = 6 * dpr;
+        const markerW = iconW + gap + nameW + paddingX * 2;
+        const markerH = paddingY * 2 + 12 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH - 6 * dpr;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(255, 107, 53, 0.3)';
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = main;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 아이콘 (간단한 공장 모양)
+        const iconX = mx + paddingX;
+        const iconY = my + paddingY;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2 * dpr;
+        ctx.beginPath();
+        ctx.moveTo(iconX, iconY + 10 * dpr);
+        ctx.lineTo(iconX, iconY + 4 * dpr);
+        ctx.lineTo(iconX + 4 * dpr, iconY + 7 * dpr);
+        ctx.lineTo(iconX + 4 * dpr, iconY + 4 * dpr);
+        ctx.lineTo(iconX + 8 * dpr, iconY + 7 * dpr);
+        ctx.lineTo(iconX + 8 * dpr, iconY);
+        ctx.lineTo(iconX + 12 * dpr, iconY);
+        ctx.lineTo(iconX + 12 * dpr, iconY + 10 * dpr);
+        ctx.closePath();
+        ctx.stroke();
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        ctx.font = `600 ${11 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(displayName, mx + paddingX + iconW + gap, my + markerH / 2);
+
+        // 화살표
+        this.drawArrow(ctx, mx + markerW / 2, my + markerH, main, undefined, dpr);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: (markerH + 6 * dpr) / dpr });
+    }
+
+    // ========== 지식산업센터 마커 ==========
+    private drawKnowledge(ctx: CanvasRenderingContext2D, m: KnowledgeMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+        const { main } = COLORS.knowledge;
+        const displayName = truncateName(m.name);
+
+        ctx.font = `600 ${11 * dpr}px ${this.fontFamily}`;
+        const nameW = ctx.measureText(displayName).width;
+
+        const paddingX = 8 * dpr;
+        const paddingY = 5 * dpr;
+        const iconW = 12 * dpr;
+        const gap = 6 * dpr;
+        const markerW = iconW + gap + nameW + paddingX * 2;
+        const markerH = paddingY * 2 + 12 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH - 6 * dpr;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(0, 102, 255, 0.3)';
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = main;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 아이콘 (빌딩 모양)
+        const iconX = mx + paddingX;
+        const iconY = my + paddingY;
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 2 * dpr;
+        ctx.strokeRect(iconX + 2 * dpr, iconY, 8 * dpr, 12 * dpr);
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        ctx.font = `600 ${11 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(displayName, mx + paddingX + iconW + gap, my + markerH / 2);
+
+        // 화살표
+        this.drawArrow(ctx, mx + markerW / 2, my + markerH, main, undefined, dpr);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: (markerH + 6 * dpr) / dpr });
+    }
+
+    // ========== 공장 마커 ==========
+    private drawFactory(ctx: CanvasRenderingContext2D, m: FactoryMarker, pt: { x: number; y: number }, dpr: number) {
+        const { main, glow } = COLORS.factoryMarker;
+        const displayName = truncateName(m.name, 10);
+
+        ctx.font = `500 ${13 * dpr}px ${this.fontFamily}`;
+        const nameW = ctx.measureText(displayName).width;
+
+        const paddingX = 12 * dpr;
+        const paddingY = 6 * dpr;
+        const iconW = 14 * dpr;
+        const gap = 5 * dpr;
+        const markerW = iconW + gap + nameW + paddingX * 2;
+        const markerH = paddingY * 2 + 14 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH - 6 * dpr;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = main;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        ctx.font = `500 ${13 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(displayName, mx + paddingX + iconW + gap, my + markerH / 2);
+
+        // 화살표
+        this.drawArrow(ctx, mx + markerW / 2, my + markerH, main, undefined, dpr);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: (markerH + 6 * dpr) / dpr });
+    }
+
+    // ========== 창고 마커 ==========
+    private drawWarehouse(ctx: CanvasRenderingContext2D, m: WarehouseMarker, pt: { x: number; y: number }, dpr: number) {
+        const { main, glow } = COLORS.warehouseMarker;
+        const displayName = truncateName(m.name, 10);
+
+        ctx.font = `500 ${13 * dpr}px ${this.fontFamily}`;
+        const nameW = ctx.measureText(displayName).width;
+
+        const paddingX = 12 * dpr;
+        const paddingY = 6 * dpr;
+        const iconW = 14 * dpr;
+        const gap = 5 * dpr;
+        const markerW = iconW + gap + nameW + paddingX * 2;
+        const markerH = paddingY * 2 + 14 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH - 6 * dpr;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = glow;
+        ctx.shadowBlur = 6 * dpr;
+        ctx.shadowOffsetY = 2 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 6 * dpr);
+        ctx.fillStyle = main;
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        ctx.font = `500 ${13 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(displayName, mx + paddingX + iconW + gap, my + markerH / 2);
+
+        // 화살표
+        this.drawArrow(ctx, mx + markerW / 2, my + markerH, main, undefined, dpr);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: (markerH + 6 * dpr) / dpr });
+    }
+
+    // ========== 하이라이트 마커 ==========
+    private drawHighlight(ctx: CanvasRenderingContext2D, m: HighlightMarker, pt: { x: number; y: number }, dpr: number) {
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        const titleW = ctx.measureText(m.title).width;
+
+        ctx.font = `500 ${11 * dpr}px ${this.fontFamily}`;
+        const infoW = m.info ? ctx.measureText(m.info).width : 0;
+
+        ctx.font = `700 ${14 * dpr}px ${this.fontFamily}`;
+        const priceW = m.price ? ctx.measureText(m.price).width : 0;
+
+        const contentW = Math.max(titleW, infoW, priceW);
+        const paddingX = 14 * dpr;
+        const paddingY = 8 * dpr;
+        const markerW = contentW + paddingX * 2;
+
+        let markerH = paddingY * 2 + 13 * dpr;
+        if (m.info) markerH += 4 * dpr + 11 * dpr;
+        if (m.price) markerH += 4 * dpr + 14 * dpr;
+
+        const mx = pt.x * dpr - markerW / 2;
+        const my = pt.y * dpr - markerH - 8 * dpr;
+
+        ctx.save();
+
+        // 그림자
+        ctx.shadowColor = 'rgba(29, 78, 216, 0.4)';
+        ctx.shadowBlur = 12 * dpr;
+        ctx.shadowOffsetY = 4 * dpr;
+
+        // 배경
+        ctx.beginPath();
+        ctx.roundRect(mx, my, markerW, markerH, 12 * dpr);
+        ctx.fillStyle = '#1d4ed8';
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+
+        // 테두리
+        ctx.strokeStyle = '#1e40af';
+        ctx.lineWidth = 1 * dpr;
+        ctx.stroke();
+
+        // 텍스트
+        ctx.textBaseline = 'middle';
+        let textY = my + paddingY + 7 * dpr;
+
+        ctx.font = `600 ${13 * dpr}px ${this.fontFamily}`;
+        ctx.fillStyle = '#ffffff';
+        ctx.fillText(m.title, mx + paddingX, textY);
+
+        if (m.info) {
+            textY += 13 * dpr / 2 + 4 * dpr + 11 * dpr / 2;
+            ctx.font = `500 ${11 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
+            ctx.fillText(m.info, mx + paddingX, textY);
+        }
+
+        if (m.price) {
+            textY += (m.info ? 11 * dpr / 2 : 13 * dpr / 2) + 4 * dpr + 14 * dpr / 2;
+            ctx.font = `700 ${14 * dpr}px ${this.fontFamily}`;
+            ctx.fillStyle = '#ffffff';
+            ctx.fillText(m.price, mx + paddingX, textY);
+        }
+
+        // 화살표
+        this.drawArrow(ctx, mx + markerW / 2, my + markerH, '#ffffff', '#3B82F6', dpr, 7);
+
+        ctx.restore();
+
+        this.hitAreas.push({ id: m.id, x: mx / dpr, y: my / dpr, w: markerW / dpr, h: (markerH + 8 * dpr) / dpr });
+    }
+
+    // ========== 유틸리티 ==========
+
+    private drawNBadge(ctx: CanvasRenderingContext2D, rightX: number, topY: number, dpr: number) {
+        ctx.font = `700 ${9 * dpr}px ${this.fontFamily}`;
+        const nTextW = ctx.measureText('N').width;
+        const badgePadX = 4 * dpr;
+        const badgePadY = 2 * dpr;
+        const badgeW = nTextW + badgePadX * 2;
+        const badgeH = 9 * dpr + badgePadY * 2;
+
+        const badgeX = rightX + 6 * dpr - badgeW;
+        const badgeY = topY - 6 * dpr;
+
+        ctx.save();
+
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
+        ctx.shadowBlur = 3 * dpr;
+        ctx.shadowOffsetY = 1 * dpr;
+
+        ctx.beginPath();
+        ctx.roundRect(badgeX, badgeY, badgeW, badgeH, 3 * dpr);
+        ctx.fillStyle = '#EF4444';
+        ctx.fill();
+
+        ctx.shadowColor = 'transparent';
+        ctx.strokeStyle = '#ffffff';
+        ctx.lineWidth = 1.5 * dpr;
+        ctx.stroke();
+
+        ctx.fillStyle = '#ffffff';
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText('N', badgeX + badgeW / 2, badgeY + badgeH / 2);
+        ctx.textAlign = 'left';
+
+        ctx.restore();
+    }
+
+    private drawArrow(ctx: CanvasRenderingContext2D, x: number, y: number, fillColor: string, strokeColor?: string, dpr: number = 1, size: number = 5) {
+        const s = size * dpr;
+        ctx.beginPath();
+        ctx.moveTo(x - s, y);
+        ctx.lineTo(x + s, y);
+        ctx.lineTo(x, y + s);
+        ctx.closePath();
+        ctx.fillStyle = fillColor;
+        ctx.fill();
+
+        if (strokeColor) {
+            ctx.strokeStyle = strokeColor;
+            ctx.lineWidth = 1.5 * dpr;
+            ctx.stroke();
         }
     }
 
-    setOnClick(callback: (marker: MarkerData) => void) {
-        this.onClick = callback;
+    // ========== API ==========
+
+    updateMarkers(markers: AnyMarker[]) {
+        this.markers = markers;
+        this.render();
+    }
+
+    setSelectedMarkerId(id: string | null) {
+        if (this.selectedMarkerId !== id) {
+            this.selectedMarkerId = id;
+            this.render();
+        }
+    }
+
+    setOnClick(cb: (m: AnyMarker) => void) {
+        this.onClick = cb;
     }
 
     destroy() {
-        this.mapboxGL.off('click', this.handleMapClick);
-
-        if (this.mapboxGL.getLayer(LAYER_ID)) {
-            this.mapboxGL.removeLayer(LAYER_ID);
-        }
-
-        this.markerBounds.clear();
-        this.spriteCache.clear();
-        this.vertexArray = null;
-
+        this.mapboxGL.off('render', this.render);
+        this.mapboxGL.off('resize', this.handleResize);
+        this.mapboxGL.getCanvas().removeEventListener('click', this.handleClick);
+        this.canvas.remove();
         logger.log('🎨 [CanvasMarkerRenderer] 정리 완료');
     }
 }

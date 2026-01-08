@@ -125,6 +125,7 @@ function DOMMarker({
     isRecent: boolean;
     isSelected: boolean;
 }) {
+    // box-shadow 사용 (Canvas 마커와 동일)
     const markerStyle: React.CSSProperties = isSelected ? {
         display: 'inline-flex',
         flexDirection: 'column',
