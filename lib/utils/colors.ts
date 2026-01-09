@@ -43,6 +43,34 @@ export function priceToColor(normalizedPrice: number): string {
 }
 
 /**
+ * 가격을 색상으로 변환 (실제 가격 범위 사용)
+ * @param avgPrice 평균 가격
+ * @param minPrice 최소 가격
+ * @param maxPrice 최대 가격
+ * @returns rgba 색상 문자열
+ */
+export function priceToColorRgba(avgPrice: number, minPrice: number, maxPrice: number): string {
+    if (!avgPrice || avgPrice <= 0) return 'rgba(200, 200, 200, 0.3)';
+
+    const t = Math.min(1, Math.max(0, (avgPrice - minPrice) / (maxPrice - minPrice || 1)));
+
+    // 파랑(저가) → 노랑(중간) → 빨강(고가)
+    if (t < 0.5) {
+        const tt = t * 2;
+        const r = Math.round(59 + (255 - 59) * tt);
+        const g = Math.round(130 + (220 - 130) * tt);
+        const b = Math.round(246 - 246 * tt);
+        return `rgba(${r}, ${g}, ${b}, 0.5)`;
+    } else {
+        const tt = (t - 0.5) * 2;
+        const r = Math.round(255 - (255 - 239) * tt);
+        const g = Math.round(220 - (220 - 68) * tt);
+        const b = Math.round(0 + 68 * tt);
+        return `rgba(${r}, ${g}, ${b}, 0.5)`;
+    }
+}
+
+/**
  * 증감률을 RGBA 색상으로 변환
  * @param rate 증감률 (-1 ~ 1, null = 데이터 없음)
  * @returns [R, G, B, A] 배열 (0-255)
@@ -60,6 +88,30 @@ export function changeRateToColor(rate: number | null): [number, number, number,
     const alpha = Math.min(0.7, 0.25 + Math.abs(rate) * 0.9) * 255;
 
     return [color[0], color[1], color[2], Math.round(alpha)];
+}
+
+/**
+ * 증감률을 rgba 문자열로 변환
+ * @param rate 증감률 (undefined = 데이터 없음)
+ * @returns rgba 색상 문자열
+ */
+export function changeRateToColorString(rate: number | undefined): string {
+    if (rate === undefined) return 'rgba(200, 200, 200, 0.3)';
+
+    // 임계값 이내는 중립 (회색)
+    if (Math.abs(rate) < CHANGE_THRESHOLD) {
+        return 'rgba(156, 163, 175, 0.3)';
+    }
+
+    const intensity = Math.min(0.7, 0.25 + Math.abs(rate) * 0.9);
+
+    if (rate > 0) {
+        // 상승: 빨강
+        return `rgba(239, 68, 68, ${intensity})`;
+    } else {
+        // 하락: 파랑
+        return `rgba(59, 130, 246, ${intensity})`;
+    }
 }
 
 /**

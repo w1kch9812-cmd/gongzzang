@@ -7,7 +7,7 @@ import ParcelDetailContent from './ParcelDetailContent';
 import { useSelectionState, useClearAllSelections, useFocusMode, useExitFocusMode, useEnterFocusMode } from '@/lib/stores/selection-store';
 import { useActiveSidePanel, useSidePanelActions, useComparePanelOpen, useComparePanelActions, useCompareSelectModalActions } from '@/lib/stores/ui-store';
 import { usePreferencesStore } from '@/lib/stores/preferences-store';
-import { SIDE_PANEL_WIDTH, SIDE_PANEL_Z_INDEX } from '@/lib/constants/ui';
+import { PANEL } from '@/lib/config/ui.config';
 import { PriceDisplay } from '@/components/common/PriceDisplay';
 import { calculatePricePerPyeong, squareMetersToPyeong } from '@/lib/utils/statistics';
 import { logger } from '@/lib/utils/logger';
@@ -105,13 +105,13 @@ export default function DetailPanel() {
                 opened={activeSidePanel === 'detail'}
                 onClose={handleClose}
                 position="left"
-                size={SIDE_PANEL_WIDTH}
+                size={PANEL.side.width}
                 padding="lg"
                 styles={{
                     header: { padding: '20px' },
                     body: { padding: '0 20px 20px' },
                 }}
-                zIndex={SIDE_PANEL_Z_INDEX}
+                zIndex={PANEL.side.zIndex}
             >
                 <Stack gap="md">
                     <div>
@@ -229,7 +229,7 @@ export default function DetailPanel() {
                     handleClose();
                 }}
                 position="left"
-                size={SIDE_PANEL_WIDTH}
+                size={PANEL.side.width}
                 title={
                     <Group gap="xs">
                         <IconBuildingFactory size={24} color="#f59e0b" />
@@ -247,7 +247,7 @@ export default function DetailPanel() {
                         flexDirection: 'column',
                         height: 'calc(100vh - 60px)',
                     },
-                    root: { zIndex: SIDE_PANEL_Z_INDEX },
+                    root: { zIndex: PANEL.side.zIndex },
                     content: { pointerEvents: 'auto' }
                 }}
                 withCloseButton
@@ -255,7 +255,7 @@ export default function DetailPanel() {
                 lockScroll={false}
                 trapFocus={false}
                 closeOnEscape={false}
-                zIndex={SIDE_PANEL_Z_INDEX}
+                zIndex={PANEL.side.zIndex}
             >
                 {/* 탭 영역 */}
                 <Tabs value={complexTab} onChange={(v) => setComplexTab(v || 'overview')} style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
@@ -482,7 +482,7 @@ export default function DetailPanel() {
             opened={activeSidePanel === 'detail'}
             onClose={handleClose}
             position="left"
-            size={SIDE_PANEL_WIDTH}
+            size={PANEL.side.width}
             styles={{
                 header: { display: 'none' },
                 body: {
@@ -490,7 +490,7 @@ export default function DetailPanel() {
                     height: '100vh',
                     overflow: 'auto',
                 },
-                root: { zIndex: SIDE_PANEL_Z_INDEX },
+                root: { zIndex: PANEL.side.zIndex },
                 content: { pointerEvents: 'auto' }
             }}
             withCloseButton={false}
@@ -498,7 +498,7 @@ export default function DetailPanel() {
             lockScroll={false}
             trapFocus={false}
             closeOnEscape={false}
-            zIndex={SIDE_PANEL_Z_INDEX}
+            zIndex={PANEL.side.zIndex}
         >
             <ParcelDetailContent parcel={selectedParcel} />
         </Drawer>

@@ -6,7 +6,7 @@ import { IconCurrentLocation, IconChevronRight, IconChartBar, IconChevronDown } 
 import { useMapStore, useCurrentLocation } from '@/lib/stores/map-store';
 import { useDataStore } from '@/lib/stores/data-store';
 import { useAnalysisModalActions } from '@/lib/stores/ui-store';
-import { ZOOM_SIG, ZOOM_EMD, ZOOM_PARCEL } from '@/lib/map/zoomConfig';
+import { ZOOM_LEVELS } from '@/lib/config/map.config';
 import { RegionDrilldownPopover } from '@/components/common/RegionDrilldown';
 import { logger } from '@/lib/utils/logger';
 
@@ -54,7 +54,7 @@ export default function LocationBar() {
 
     // 드릴다운에서 지역 선택 시
     const handleRegionSelect = (level: 'sig' | 'emd', code: string, name: string, coord: [number, number]) => {
-        const zoomLevel = level === 'sig' ? ZOOM_SIG.min + 1 : ZOOM_PARCEL.min;
+        const zoomLevel = level === 'sig' ? ZOOM_LEVELS.SIG.min + 1 : ZOOM_LEVELS.PARCEL.min;
         moveToRegion(coord, zoomLevel);
     };
 
@@ -67,7 +67,7 @@ export default function LocationBar() {
                     if (mapInstance && window.naver?.maps) {
                         const latlng = new window.naver.maps.LatLng(latitude, longitude);
                         mapInstance.setCenter(latlng);
-                        mapInstance.setZoom(ZOOM_PARCEL.min);
+                        mapInstance.setZoom(ZOOM_LEVELS.PARCEL.min);
                     }
                 },
                 (error) => {
@@ -85,9 +85,9 @@ export default function LocationBar() {
         if (!regionInfo) return;
 
         // 줌 레벨에 따라 시군구 또는 읍면동 분석
-        if (currentZoom >= ZOOM_EMD.min && location.emd && regionInfo.emdCode) {
+        if (currentZoom >= ZOOM_LEVELS.EMD.min && location.emd && regionInfo.emdCode) {
             openModal('emd', regionInfo.emdCode, location.emd);
-        } else if (currentZoom >= ZOOM_SIG.min && location.sig && regionInfo.sigCode) {
+        } else if (currentZoom >= ZOOM_LEVELS.SIG.min && location.sig && regionInfo.sigCode) {
             openModal('sig', regionInfo.sigCode, location.sig);
         } else if (location.sig && regionInfo.sigCode) {
             // 기본적으로 시군구 분석
@@ -98,10 +98,10 @@ export default function LocationBar() {
     // 위치 표시 텍스트 생성
     const locationText = useMemo(() => {
         const parts = [location.sido];
-        if (currentZoom >= ZOOM_SIG.min && location.sig) {
+        if (currentZoom >= ZOOM_LEVELS.SIG.min && location.sig) {
             parts.push(location.sig);
         }
-        if (currentZoom >= ZOOM_EMD.min && location.emd) {
+        if (currentZoom >= ZOOM_LEVELS.EMD.min && location.emd) {
             parts.push(location.emd);
         }
         return parts;

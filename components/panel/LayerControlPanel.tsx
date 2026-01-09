@@ -37,6 +37,7 @@ import { useMapStore } from '@/lib/stores/map-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useTimeline, useTimelineActions } from '@/lib/stores/filter-store';
 import type { LayerType, ParcelColorMode } from '@/types/data';
+import { PANEL } from '@/lib/config/ui.config';
 
 // ========================================
 // 레이어 설정 데이터 구조
@@ -795,7 +796,7 @@ function LayerControlPanelInner() {
                     radius="lg"
                     p="md"
                     style={{
-                        width: 260,
+                        width: PANEL.layer.width,
                         background: 'white',
                         border: '1px solid #e2e8f0',
                     }}

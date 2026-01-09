@@ -8,7 +8,6 @@ import { useMapStore } from '@/lib/stores/map-store';
 import { useUIStore } from '@/lib/stores/ui-store';
 import { useDataStore } from '@/lib/stores/data-store';
 import { useSelectionStore } from '@/lib/stores/selection-store';
-import { ZOOM_SIDO, ZOOM_SIG, ZOOM_EMD, ZOOM_PARCEL } from '@/lib/map/zoomConfig';
 import { usePriceColorExpression } from '@/lib/hooks/usePriceColorExpression';
 import { usePriceChangeFeatureState } from '@/lib/hooks/usePriceChangeFeatureState';
 import {
@@ -20,66 +19,48 @@ import {
 import { logger } from '@/lib/utils/logger';
 import type { LayerType } from '@/types/data';
 import { Protocol } from 'pmtiles';
-import { ENTITY_COLORS } from '@/lib/constants';
+// ✅ 설정 파일 사용 (Single Source of Truth)
+import { COLORS, OPACITY } from '@/lib/config/style.config';
+import { LAYER_IDS, SOURCE_IDS } from '@/lib/config/layer.config';
+import { ZOOM_LEVELS } from '@/lib/config/map.config';
+import { priceToColorRgba, changeRateToColorString } from '@/lib/utils/colors';
 
 // R2 CDN URL (환경변수, 없으면 로컬 API 사용)
 const R2_BASE_URL = process.env.NEXT_PUBLIC_R2_URL || '';
-
-// 가격 → 색상 변환 (저가=파랑 → 고가=빨강)
-function priceToColor(avgPrice: number, minPrice: number, maxPrice: number): string {
-    if (!avgPrice || avgPrice <= 0) return 'rgba(200, 200, 200, 0.3)';  // 데이터 없음
-
-    const t = Math.min(1, Math.max(0, (avgPrice - minPrice) / (maxPrice - minPrice || 1)));
-
-    // 파랑(저가) → 노랑(중간) → 빨강(고가)
-    if (t < 0.5) {
-        const tt = t * 2;
-        const r = Math.round(59 + (255 - 59) * tt);
-        const g = Math.round(130 + (220 - 130) * tt);
-        const b = Math.round(246 - 246 * tt);
-        return `rgba(${r}, ${g}, ${b}, 0.5)`;
-    } else {
-        const tt = (t - 0.5) * 2;
-        const r = Math.round(255 - (255 - 239) * tt);
-        const g = Math.round(220 - (220 - 68) * tt);
-        const b = Math.round(0 + 68 * tt);
-        return `rgba(${r}, ${g}, ${b}, 0.5)`;
-    }
-}
-
-// 증감률 → 색상 변환 (상승=빨강, 하락=파랑, 중립=회색)
-function changeRateToColor(rate: number | undefined): string {
-    if (rate === undefined) return 'rgba(200, 200, 200, 0.3)';
-
-    // 상승: 빨강, 하락: 파랑, 중립: 회색
-    const threshold = 0.02;
-
-    if (Math.abs(rate) < threshold) {
-        return 'rgba(156, 163, 175, 0.3)';  // 중립 - 회색
-    }
-
-    if (rate > 0) {
-        // 상승: 빨강 (rate가 클수록 진한 빨강)
-        const intensity = Math.min(0.7, 0.25 + Math.abs(rate) * 0.9);
-        return `rgba(239, 68, 68, ${intensity})`;
-    } else {
-        // 하락: 파랑 (rate가 작을수록 진한 파랑)
-        const intensity = Math.min(0.7, 0.25 + Math.abs(rate) * 0.9);
-        return `rgba(59, 130, 246, ${intensity})`;
-    }
-}
 
 interface Props {
     map: naver.maps.Map | null;
 }
 
-// 레이어-가시성 키 매핑 테이블
+// ✅ 레이어-가시성 키 매핑 테이블 (설정 파일 사용)
 const LAYER_VISIBILITY_MAP: Array<{ layers: string[]; key: LayerType }> = [
-    { layers: ['vt-parcels-fill', 'vt-parcels-line'], key: 'parcel' },
-    { layers: ['vt-complex-fill', 'vt-complex-line', 'vt-complex-label', 'vt-complex-glow-outer', 'vt-complex-glow-mid', 'vt-complex-glow-inner'], key: 'industrial-complex' },
-    { layers: ['vt-lots-fill', 'vt-lots-line'], key: 'industrial-lot' },
-    { layers: ['vt-industries-fill', 'vt-industries-line'], key: 'industry-type' },
-    { layers: ['factory-points', 'factory-labels'], key: 'factory' },
+    {
+        layers: [LAYER_IDS.polygons.parcels.fill, LAYER_IDS.polygons.parcels.line],
+        key: 'parcel'
+    },
+    {
+        layers: [
+            LAYER_IDS.polygons.complex.fill,
+            LAYER_IDS.polygons.complex.line,
+            LAYER_IDS.polygons.complex.label,
+            LAYER_IDS.polygons.complex.glow.outer,
+            LAYER_IDS.polygons.complex.glow.mid,
+            LAYER_IDS.polygons.complex.glow.inner
+        ],
+        key: 'industrial-complex'
+    },
+    {
+        layers: [LAYER_IDS.polygons.lots.fill, LAYER_IDS.polygons.lots.line],
+        key: 'industrial-lot'
+    },
+    {
+        layers: [LAYER_IDS.polygons.industries.fill, LAYER_IDS.polygons.industries.line],
+        key: 'industry-type'
+    },
+    {
+        layers: [LAYER_IDS.markers.factories.points, LAYER_IDS.markers.factories.labels],
+        key: 'factory'
+    },
 ];
 
 // 클릭 판정 임계값 (드래그와 구분)
@@ -92,6 +73,8 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
     const clickStartRef = useRef<{ x: number; y: number; time: number } | null>(null);
     // 비동기 요청 취소를 위한 ref (race condition 방지)
     const pendingRequestRef = useRef<string | null>(null);
+    // ✅ initializeLayers 함수 ref (메모리 누수 방지 - 이벤트 리스너 제거용)
+    const initializeLayersRef = useRef<(() => void) | null>(null);
 
     // UIStore - UI 상태
     const visibleLayers = useUIStore((state) => state.visibleLayers);
@@ -149,7 +132,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 if (!agg.avgTxPrice || agg.avgTxPrice <= 0) return;
 
                 const code = agg.regionCode;
-                const color = priceToColor(agg.avgTxPrice, minPrice, maxPrice);
+                const color = priceToColorRgba(agg.avgTxPrice, minPrice, maxPrice);
 
                 matchExpr.push(code, color);
 
@@ -173,7 +156,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 if (!key.startsWith(`${level}-`)) return;
 
                 const code = agg.regionCode;
-                const color = changeRateToColor(agg.avgChangeRate);
+                const color = changeRateToColorString(agg.avgChangeRate);
 
                 if (agg.avgChangeRate !== undefined) {
                     withChangeRate++;
@@ -312,16 +295,19 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
     }, []);
 
     const handleParcelMouseUp = useCallback((e: any) => {
+        // ✅ Store에서 마커 클릭 상태 가져오기 (전역 window 오염 제거)
+        const markerClickingId = useMapStore.getState().markerClickingId;
+
         logger.log('🖱️ [Parcel] mouseup 이벤트 발생', {
             hasClickStart: !!clickStartRef.current,
-            markerClicking: window.__markerClicking,
+            markerClicking: !!markerClickingId,
             features: e.features?.length
         });
 
         if (!clickStartRef.current) return;
 
         // 마커 클릭 중인 경우 폴리곤 클릭 무시 (마커와 폴리곤 이벤트 충돌 방지)
-        if (window.__markerClicking) {
+        if (markerClickingId) {
             logger.log('⏭️ [Parcel] 마커 클릭 중 - 폴리곤 클릭 무시');
             clickStartRef.current = null;
             return;
@@ -339,12 +325,14 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             const feature = e.features?.[0];
             if (!feature) {
                 logger.warn('⚠️ [Parcel] feature 없음');
+                clickStartRef.current = null;  // ✅ 상태 리셋
                 return;
             }
 
             const pnu = feature.properties?.PNU;
             if (!pnu) {
                 logger.warn('⚠️ [Parcel] PNU 없음', feature.properties);
+                clickStartRef.current = null;  // ✅ 상태 리셋
                 return;
             }
 
@@ -365,7 +353,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 address: feature.properties?.jibun || feature.properties?.JIBUN || '',
                 area: feature.properties?.AREA || feature.properties?.area || 0,
                 transactionPrice: feature.properties?.price || feature.properties?.PRICE || 0,
-                coord: markerData?.coord,
+                coord: markerData?.coord ?? null,  // ✅ undefined 대신 null 사용 (명시적)
             };
 
             // 즉시 선택 및 패널 열기 (setSelectedParcel이 패널도 열어줌)
@@ -465,7 +453,8 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         // 레이어 초기화 함수 (style.load 시에도 호출됨)
         const initializeLayers = () => {
             // 이미 초기화되어 있으면 스킵
-            if (mbMap.getSource('vt-parcels')) {
+            // ✅ 설정 파일 사용 (하드코딩 제거)
+            if (mbMap.getSource(SOURCE_IDS.parcels)) {
                 logger.log('📦 [Polygon] 소스 이미 존재 - 초기화 스킵');
                 return;
             }
@@ -499,94 +488,166 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             logger.log('🎨 MVT 레이어 초기화 시작...');
 
             // ===== 시도 (SIDO) =====
-            // 줌 0-8: 시/도 경계 표시 - 미니멀 스타일
-            addSourceSafely(mbMap, 'vt-sido', { type: 'vector', tiles: tiles('sido'), maxzoom: 8 });
+            // ✅ 설정 파일 사용
+            addSourceSafely(mbMap, SOURCE_IDS.sido, { type: 'vector', tiles: tiles('sido'), maxzoom: 8 });
             addLayerSafely(mbMap, {
-                id: 'vt-sido-fill', type: 'fill', source: 'vt-sido', 'source-layer': 'sido',
-                minzoom: ZOOM_SIDO.min, maxzoom: ZOOM_SIG.min,
-                paint: { 'fill-color': '#F8FAFC', 'fill-opacity': 0.3 },
+                id: LAYER_IDS.polygons.sido.fill,
+                type: 'fill',
+                source: SOURCE_IDS.sido,
+                'source-layer': 'sido',
+                minzoom: ZOOM_LEVELS.SIDO.min,
+                maxzoom: ZOOM_LEVELS.SIG.min,
+                paint: {
+                    'fill-color': COLORS.ui.background.secondary,
+                    'fill-opacity': OPACITY.polygon.minimal
+                },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-sido-line', type: 'line', source: 'vt-sido', 'source-layer': 'sido',
-                minzoom: ZOOM_SIDO.min, maxzoom: ZOOM_SIG.min,
-                paint: { 'line-color': '#94A3B8', 'line-width': 2 },
+                id: LAYER_IDS.polygons.sido.line,
+                type: 'line',
+                source: SOURCE_IDS.sido,
+                'source-layer': 'sido',
+                minzoom: ZOOM_LEVELS.SIDO.min,
+                maxzoom: ZOOM_LEVELS.SIG.min,
+                paint: {
+                    'line-color': COLORS.ui.border.default,
+                    'line-width': 2
+                },
             });
 
             // ===== 시군구 (SIG) =====
-            // 소스 maxzoom: PMTiles 생성 줌 레벨 (overzoom은 레이어에서 처리) - 미니멀 스타일
-            addSourceSafely(mbMap, 'vt-sig', { type: 'vector', tiles: tiles('sig'), maxzoom: 12 });
+            // ✅ 설정 파일 사용
+            addSourceSafely(mbMap, SOURCE_IDS.sig, { type: 'vector', tiles: tiles('sig'), maxzoom: 12 });
             addLayerSafely(mbMap, {
-                id: 'vt-sig-fill', type: 'fill', source: 'vt-sig', 'source-layer': 'sig',
-                minzoom: ZOOM_SIG.min, maxzoom: ZOOM_EMD.min,
-                paint: { 'fill-color': '#F8FAFC', 'fill-opacity': 0.25 },
+                id: LAYER_IDS.polygons.sig.fill,
+                type: 'fill',
+                source: SOURCE_IDS.sig,
+                'source-layer': 'sig',
+                minzoom: ZOOM_LEVELS.SIG.min,
+                maxzoom: ZOOM_LEVELS.EMD.min,
+                paint: {
+                    'fill-color': COLORS.ui.background.secondary,
+                    'fill-opacity': 0.25
+                },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-sig-line', type: 'line', source: 'vt-sig', 'source-layer': 'sig',
-                minzoom: ZOOM_SIG.min, maxzoom: ZOOM_EMD.min,
-                paint: { 'line-color': '#CBD5E1', 'line-width': 1.5 },
+                id: LAYER_IDS.polygons.sig.line,
+                type: 'line',
+                source: SOURCE_IDS.sig,
+                'source-layer': 'sig',
+                minzoom: ZOOM_LEVELS.SIG.min,
+                maxzoom: ZOOM_LEVELS.EMD.min,
+                paint: {
+                    'line-color': COLORS.ui.border.light,
+                    'line-width': 1.5
+                },
             });
 
             // ===== 읍면동 (EMD) =====
-            addSourceSafely(mbMap, 'vt-emd', { type: 'vector', tiles: tiles('emd'), maxzoom: 14 });
+            // ✅ 설정 파일 사용
+            addSourceSafely(mbMap, SOURCE_IDS.emd, { type: 'vector', tiles: tiles('emd'), maxzoom: 14 });
             addLayerSafely(mbMap, {
-                id: 'vt-emd-fill', type: 'fill', source: 'vt-emd', 'source-layer': 'emd',
-                minzoom: ZOOM_EMD.min, maxzoom: ZOOM_PARCEL.min,
-                paint: { 'fill-color': '#F8FAFC', 'fill-opacity': 0.2 },
+                id: LAYER_IDS.polygons.emd.fill,
+                type: 'fill',
+                source: SOURCE_IDS.emd,
+                'source-layer': 'emd',
+                minzoom: ZOOM_LEVELS.EMD.min,
+                maxzoom: ZOOM_LEVELS.PARCEL.min,
+                paint: {
+                    'fill-color': COLORS.ui.background.secondary,
+                    'fill-opacity': 0.2
+                },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-emd-line', type: 'line', source: 'vt-emd', 'source-layer': 'emd',
-                minzoom: ZOOM_EMD.min, maxzoom: ZOOM_PARCEL.min,
-                paint: { 'line-color': '#E2E8F0', 'line-width': 1 },
+                id: LAYER_IDS.polygons.emd.line,
+                type: 'line',
+                source: SOURCE_IDS.emd,
+                'source-layer': 'emd',
+                minzoom: ZOOM_LEVELS.EMD.min,
+                maxzoom: ZOOM_LEVELS.PARCEL.min,
+                paint: {
+                    'line-color': COLORS.ui.border.default,
+                    'line-width': 1
+                },
             });
 
             // ===== 지역 마커 호버 하이라이트 레이어 =====
+            // ✅ 설정 파일 사용 - hover 레이어
             // 시군구 하이라이트 (호버 시)
             addLayerSafely(mbMap, {
-                id: 'vt-sig-hover-fill', type: 'fill', source: 'vt-sig', 'source-layer': 'sig',
-                minzoom: ZOOM_SIG.min, maxzoom: ZOOM_EMD.min,
-                filter: ['==', ['get', 'code'], ''],  // 초기: 아무것도 안 보임
-                paint: { 'fill-color': 'rgba(239, 68, 68, 0.15)', 'fill-opacity': 1 },
+                id: 'vt-sig-hover-fill',
+                type: 'fill',
+                source: SOURCE_IDS.sig,
+                'source-layer': 'sig',
+                minzoom: ZOOM_LEVELS.SIG.min,
+                maxzoom: ZOOM_LEVELS.EMD.min,
+                filter: ['==', ['get', 'code'], ''],
+                paint: {
+                    'fill-color': 'rgba(239, 68, 68, 0.15)',
+                    'fill-opacity': 1
+                },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-sig-hover-line', type: 'line', source: 'vt-sig', 'source-layer': 'sig',
-                minzoom: ZOOM_SIG.min, maxzoom: ZOOM_EMD.min,
-                filter: ['==', ['get', 'code'], ''],  // 초기: 아무것도 안 보임
+                id: 'vt-sig-hover-line',
+                type: 'line',
+                source: SOURCE_IDS.sig,
+                'source-layer': 'sig',
+                minzoom: ZOOM_LEVELS.SIG.min,
+                maxzoom: ZOOM_LEVELS.EMD.min,
+                filter: ['==', ['get', 'code'], ''],
                 paint: {
                     'line-color': 'rgba(239, 68, 68, 0.7)',
                     'line-width': 1,
-                    'line-dasharray': [4, 3],  // 점선
+                    'line-dasharray': [4, 3],
                 },
             });
             // 읍면동 하이라이트 (호버 시)
             addLayerSafely(mbMap, {
-                id: 'vt-emd-hover-fill', type: 'fill', source: 'vt-emd', 'source-layer': 'emd',
-                minzoom: ZOOM_EMD.min, maxzoom: ZOOM_PARCEL.min,
-                filter: ['==', ['get', 'code'], ''],  // 초기: 아무것도 안 보임
-                paint: { 'fill-color': 'rgba(239, 68, 68, 0.15)', 'fill-opacity': 1 },
+                id: 'vt-emd-hover-fill',
+                type: 'fill',
+                source: SOURCE_IDS.emd,
+                'source-layer': 'emd',
+                minzoom: ZOOM_LEVELS.EMD.min,
+                maxzoom: ZOOM_LEVELS.PARCEL.min,
+                filter: ['==', ['get', 'code'], ''],
+                paint: {
+                    'fill-color': 'rgba(239, 68, 68, 0.15)',
+                    'fill-opacity': 1
+                },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-emd-hover-line', type: 'line', source: 'vt-emd', 'source-layer': 'emd',
-                minzoom: ZOOM_EMD.min, maxzoom: ZOOM_PARCEL.min,
-                filter: ['==', ['get', 'code'], ''],  // 초기: 아무것도 안 보임
+                id: 'vt-emd-hover-line',
+                type: 'line',
+                source: SOURCE_IDS.emd,
+                'source-layer': 'emd',
+                minzoom: ZOOM_LEVELS.EMD.min,
+                maxzoom: ZOOM_LEVELS.PARCEL.min,
+                filter: ['==', ['get', 'code'], ''],
                 paint: {
                     'line-color': 'rgba(239, 68, 68, 0.7)',
                     'line-width': 1,
-                    'line-dasharray': [4, 3],  // 점선
+                    'line-dasharray': [4, 3],
                 },
             });
 
-            // ===== 필지 (Parcels) - 미니멀 스타일 =====
-            // 실거래가 기반 색상 스펙트럼 (저가=파랑 → 고가=빨강)
-            // 초기값은 연한 회색, useEffect에서 가격 스펙트럼으로 업데이트
-            addSourceSafely(mbMap, 'vt-parcels', { type: 'vector', tiles: tiles('parcels'), maxzoom: 17, promoteId: 'PNU' });
+            // ===== 필지 (Parcels) =====
+            // ✅ 설정 파일 사용
+            addSourceSafely(mbMap, SOURCE_IDS.parcels, {
+                type: 'vector',
+                tiles: tiles('parcels'),
+                maxzoom: 17,
+                promoteId: 'PNU'
+            });
 
             addLayerSafely(mbMap, {
-                id: 'vt-parcels-fill', type: 'fill', source: 'vt-parcels', 'source-layer': 'parcels',
-                minzoom: ZOOM_PARCEL.min,
+                id: LAYER_IDS.polygons.parcels.fill,
+                type: 'fill',
+                source: SOURCE_IDS.parcels,
+                'source-layer': 'parcels',
+                minzoom: ZOOM_LEVELS.PARCEL.min,
                 paint: {
-                    // 초기값: 연한 회색 (useEffect에서 가격 스펙트럼으로 업데이트)
-                    'fill-color': '#E2E8F0',
-                    'fill-opacity': 0.4,  // 적당한 불투명도
+                    'fill-color': COLORS.ui.border.default,
+                    'fill-opacity': OPACITY.polygon.default,
                 },
             });
             // 필지 테두리 없음 (깔끔한 스타일)
@@ -614,9 +675,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             });
 
             // ===== 산업단지 소스 & Fill (투명 - glow만 표시) =====
-            addSourceSafely(mbMap, 'vt-complex', { type: 'vector', tiles: tiles('complex'), maxzoom: 16, promoteId: 'id' });
+            addSourceSafely(mbMap, SOURCE_IDS.complex, { type: 'vector', tiles: tiles('complex'), maxzoom: 16, promoteId: 'id' });
             const complexFillAdded = addLayerSafely(mbMap, {
-                id: 'vt-complex-fill', type: 'fill', source: 'vt-complex', 'source-layer': 'complex',
+                id: LAYER_IDS.polygons.complex.fill, type: 'fill', source: SOURCE_IDS.complex, 'source-layer': 'complex',
                 paint: {
                     'fill-color': '#FEF3C7',
                     'fill-opacity': 0,  // 투명 (glow만 표시)
@@ -628,7 +689,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             // line-join: 'round'로 모서리 부드럽게, 줌 기반 크기 조절
             // 1. 가장 안쪽 glow (가장 연하고 넓음)
             addLayerSafely(mbMap, {
-                id: 'vt-complex-glow-outer', type: 'line', source: 'vt-complex', 'source-layer': 'complex',
+                id: LAYER_IDS.polygons.complex.glow.outer, type: 'line', source: SOURCE_IDS.complex, 'source-layer': 'complex',
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: {
                     'line-color': '#FCD34D',
@@ -640,7 +701,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             });
             // 2. 중간 glow
             addLayerSafely(mbMap, {
-                id: 'vt-complex-glow-mid', type: 'line', source: 'vt-complex', 'source-layer': 'complex',
+                id: LAYER_IDS.polygons.complex.glow.mid, type: 'line', source: SOURCE_IDS.complex, 'source-layer': 'complex',
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: {
                     'line-color': '#FBBF24',
@@ -652,7 +713,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             });
             // 3. 외곽선 근처 glow (가장 진함)
             addLayerSafely(mbMap, {
-                id: 'vt-complex-glow-inner', type: 'line', source: 'vt-complex', 'source-layer': 'complex',
+                id: LAYER_IDS.polygons.complex.glow.inner, type: 'line', source: SOURCE_IDS.complex, 'source-layer': 'complex',
                 layout: { 'line-join': 'round', 'line-cap': 'round' },
                 paint: {
                     'line-color': '#F59E0B',
@@ -665,30 +726,30 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             logger.log(`🏭 [Polygon] 산업단지 inner glow 레이어 추가`);
 
             // ===== 용지 (모든 줌레벨에서 표시) - 미니멀 스타일 =====
-            addSourceSafely(mbMap, 'vt-lots', { type: 'vector', tiles: tiles('lots'), maxzoom: 17 });
+            addSourceSafely(mbMap, SOURCE_IDS.lots, { type: 'vector', tiles: tiles('lots'), maxzoom: 17 });
             addLayerSafely(mbMap, {
-                id: 'vt-lots-fill', type: 'fill', source: 'vt-lots', 'source-layer': 'lots',
+                id: LAYER_IDS.polygons.lots.fill, type: 'fill', source: SOURCE_IDS.lots, 'source-layer': 'lots',
                 paint: { 'fill-color': '#EFF6FF', 'fill-opacity': 0.4 },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-lots-line', type: 'line', source: 'vt-lots', 'source-layer': 'lots',
+                id: LAYER_IDS.polygons.lots.line, type: 'line', source: SOURCE_IDS.lots, 'source-layer': 'lots',
                 paint: { 'line-color': '#93C5FD', 'line-width': 1 },
             });
 
             // ===== 유치업종 (모든 줌레벨에서 표시) - 미니멀 스타일 =====
-            addSourceSafely(mbMap, 'vt-industries', { type: 'vector', tiles: tiles('industries'), maxzoom: 17 });
+            addSourceSafely(mbMap, SOURCE_IDS.industries, { type: 'vector', tiles: tiles('industries'), maxzoom: 17 });
             addLayerSafely(mbMap, {
-                id: 'vt-industries-fill', type: 'fill', source: 'vt-industries', 'source-layer': 'industries',
+                id: LAYER_IDS.polygons.industries.fill, type: 'fill', source: SOURCE_IDS.industries, 'source-layer': 'industries',
                 paint: { 'fill-color': '#ECFDF5', 'fill-opacity': 0.4 },
             });
             addLayerSafely(mbMap, {
-                id: 'vt-industries-line', type: 'line', source: 'vt-industries', 'source-layer': 'industries',
+                id: LAYER_IDS.polygons.industries.line, type: 'line', source: SOURCE_IDS.industries, 'source-layer': 'industries',
                 paint: { 'line-color': '#86EFAC', 'line-width': 1 },
             });
 
             // ===== 산업단지 Line (용지/유치업종/공장 위에 - 가장 위) - 미니멀 스타일 =====
             const complexLineAdded = addLayerSafely(mbMap, {
-                id: 'vt-complex-line', type: 'line', source: 'vt-complex', 'source-layer': 'complex',
+                id: LAYER_IDS.polygons.complex.line, type: 'line', source: SOURCE_IDS.complex, 'source-layer': 'complex',
                 paint: { 'line-color': '#D97706', 'line-width': 1 },
             });
             logger.log(`🏭 [Polygon] 산업단지 line 레이어 추가 (최상단): ${complexLineAdded}`);
@@ -696,9 +757,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             // ===== 산업단지 라벨 (폴리곤 외곽선을 따라 표시) =====
             // 3D 모드에서 지면에 누워있는 것처럼 보이도록 text-pitch-alignment: 'map' 사용
             const complexLabelAdded = addLayerSafely(mbMap, {
-                id: 'vt-complex-label',
+                id: LAYER_IDS.polygons.complex.label,
                 type: 'symbol',
-                source: 'vt-complex',
+                source: SOURCE_IDS.complex,
                 'source-layer': 'complex',
                 minzoom: 17,  // 17줌 레벨부터 표시
                 layout: {
@@ -739,15 +800,16 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
             // ===== 선택된 필지 강조 (가장 위에 배치) - 미니멀 스타일 =====
             // fill (반투명 파란색) + line (깔끔한 파란색 테두리)
+            // ✅ 설정 파일 사용 (하드코딩 제거)
             const fillAdded = addLayerSafely(mbMap, {
-                id: 'vt-parcels-selected-fill', type: 'fill', source: 'vt-parcels', 'source-layer': 'parcels',
-                minzoom: ZOOM_PARCEL.min,
+                id: 'vt-parcels-selected-fill', type: 'fill', source: SOURCE_IDS.parcels, 'source-layer': 'parcels',
+                minzoom: ZOOM_LEVELS.PARCEL.min,
                 paint: { 'fill-color': '#3B82F6', 'fill-opacity': 0.35 },
                 filter: ['==', ['get', 'PNU'], ''],  // 초기엔 아무것도 안 보임
             });
             const lineAdded = addLayerSafely(mbMap, {
-                id: 'vt-parcels-selected-line', type: 'line', source: 'vt-parcels', 'source-layer': 'parcels',
-                minzoom: ZOOM_PARCEL.min,
+                id: 'vt-parcels-selected-line', type: 'line', source: SOURCE_IDS.parcels, 'source-layer': 'parcels',
+                minzoom: ZOOM_LEVELS.PARCEL.min,
                 paint: { 'line-color': '#2563EB', 'line-width': 2.5 },
                 filter: ['==', ['get', 'PNU'], ''],  // 초기엔 아무것도 안 보임
             });
@@ -760,15 +822,15 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             // 클릭 이벤트 (mousedown + mouseup으로 드래그와 구분)
             try {
                 // 레이어 존재 확인
-                const parcelFillLayer = mbMap.getLayer('vt-parcels-fill');
-                const complexFillLayer = mbMap.getLayer('vt-complex-fill');
+                const parcelFillLayer = mbMap.getLayer(LAYER_IDS.polygons.parcels.fill);
+                const complexFillLayer = mbMap.getLayer(LAYER_IDS.polygons.complex.fill);
                 logger.log(`🎯 [Event] 레이어 존재: parcels=${!!parcelFillLayer}, complex=${!!complexFillLayer}`);
 
                 if (parcelFillLayer) {
-                    mbMap.on('mousedown', 'vt-parcels-fill', handleParcelMouseDown);
-                    mbMap.on('mouseup', 'vt-parcels-fill', handleParcelMouseUp);
-                    mbMap.on('mouseenter', 'vt-parcels-fill', handleMouseEnter);
-                    mbMap.on('mouseleave', 'vt-parcels-fill', handleMouseLeave);
+                    mbMap.on('mousedown', LAYER_IDS.polygons.parcels.fill, handleParcelMouseDown);
+                    mbMap.on('mouseup', LAYER_IDS.polygons.parcels.fill, handleParcelMouseUp);
+                    mbMap.on('mouseenter', LAYER_IDS.polygons.parcels.fill, handleMouseEnter);
+                    mbMap.on('mouseleave', LAYER_IDS.polygons.parcels.fill, handleMouseLeave);
                     logger.log('✅ [Event] 필지 클릭 이벤트 등록 완료');
                 } else {
                     logger.error('❌ [Event] vt-parcels-fill 레이어 없음!');
@@ -776,17 +838,18 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
                 if (complexFillLayer) {
                     // 산업단지 클릭 이벤트 (ComplexMarkerLayer로 대체됨)
-                    // mbMap.on('click', 'vt-complex-fill', handleComplexClick);
-                    mbMap.on('mouseenter', 'vt-complex-fill', handleMouseEnter);
-                    mbMap.on('mouseleave', 'vt-complex-fill', handleMouseLeave);
+                    // mbMap.on('click', LAYER_IDS.polygons.complex.fill, handleComplexClick);
+                    mbMap.on('mouseenter', LAYER_IDS.polygons.complex.fill, handleMouseEnter);
+                    mbMap.on('mouseleave', LAYER_IDS.polygons.complex.fill, handleMouseLeave);
                 }
             } catch (err) {
                 logger.error('❌ [Event] 이벤트 등록 실패:', err);
             }
 
             // 소스 및 레이어 상태 로그
-            const sources = ['vt-sido', 'vt-sig', 'vt-emd', 'vt-parcels', 'vt-complex', 'vt-lots', 'vt-industries'];
-            const layers = ['vt-sido-fill', 'vt-sig-fill', 'vt-emd-fill', 'vt-parcels-fill', 'vt-complex-fill', 'vt-lots-fill', 'vt-industries-fill'];
+            // ✅ 설정 파일 사용 (하드코딩 제거)
+            const sources = [SOURCE_IDS.sido, SOURCE_IDS.sig, SOURCE_IDS.emd, SOURCE_IDS.parcels, SOURCE_IDS.complex, SOURCE_IDS.lots, SOURCE_IDS.industries];
+            const layers = [LAYER_IDS.polygons.sido.fill, LAYER_IDS.polygons.sig.fill, LAYER_IDS.polygons.emd.fill, LAYER_IDS.polygons.parcels.fill, LAYER_IDS.polygons.complex.fill, LAYER_IDS.polygons.lots.fill, LAYER_IDS.polygons.industries.fill];
             logger.log('📦 [Polygon] 소스:', sources.map(s => `${s.replace('vt-','')}:${mbMap.getSource(s) ? '✅' : '❌'}`).join(' '));
             logger.log('🎨 [Polygon] 레이어:', layers.map(l => `${l.replace('vt-','').replace('-fill','').replace('-circle','')}:${mbMap.getLayer(l) ? '✅' : '❌'}`).join(' '));
 
@@ -800,6 +863,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             logger.log('✅ [Polygon] MVT 초기화 완료');
         };
 
+        // ✅ ref에 함수 저장 (이벤트 리스너 제거를 위해)
+        initializeLayersRef.current = initializeLayers;
+
         // 초기 레이어 초기화
         initializeLayers();
 
@@ -809,17 +875,20 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         // 클린업: 이벤트 리스너 제거 (메모리 누수 방지)
         return () => {
             try {
-                mbMap.off('mousedown', 'vt-parcels-fill', handleParcelMouseDown);
-                mbMap.off('mouseup', 'vt-parcels-fill', handleParcelMouseUp);
-                mbMap.off('mouseenter', 'vt-parcels-fill', handleMouseEnter);
-                mbMap.off('mouseleave', 'vt-parcels-fill', handleMouseLeave);
-                // mbMap.off('click', 'vt-complex-fill', handleComplexClick);
-                mbMap.off('mouseenter', 'vt-complex-fill', handleMouseEnter);
-                mbMap.off('mouseleave', 'vt-complex-fill', handleMouseLeave);
-                mbMap.off('style.load', initializeLayers);  // 스타일 로드 리스너 제거
+                mbMap.off('mousedown', LAYER_IDS.polygons.parcels.fill, handleParcelMouseDown);
+                mbMap.off('mouseup', LAYER_IDS.polygons.parcels.fill, handleParcelMouseUp);
+                mbMap.off('mouseenter', LAYER_IDS.polygons.parcels.fill, handleMouseEnter);
+                mbMap.off('mouseleave', LAYER_IDS.polygons.parcels.fill, handleMouseLeave);
+                // mbMap.off('click', LAYER_IDS.polygons.complex.fill, handleComplexClick);
+                mbMap.off('mouseenter', LAYER_IDS.polygons.complex.fill, handleMouseEnter);
+                mbMap.off('mouseleave', LAYER_IDS.polygons.complex.fill, handleMouseLeave);
+                // ✅ ref에 저장된 함수 참조로 제거 (메모리 누수 방지)
+                if (initializeLayersRef.current) {
+                    mbMap.off('style.load', initializeLayersRef.current);
+                }
             } catch { /* 무시 */ }
         };
-    }, [mapboxGLReady, handleParcelMouseDown, handleParcelMouseUp, handleMouseEnter, handleMouseLeave, handleComplexClick]);
+    }, [mapboxGLReady, handleParcelMouseDown, handleParcelMouseUp, handleMouseEnter, handleMouseLeave]);  // ✅ handleComplexClick 제거 (미사용)
 
     // ===== parcel-markers 데이터를 Feature State로 매핑 (단일 소스) =====
     useEffect(() => {
@@ -839,8 +908,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             parcels.forEach(parcel => {
                 try {
                     const pnu = parcel.pnu || parcel.id;  // 새 필드명 우선 사용
+                    // ✅ 설정 파일 사용 (하드코딩 제거)
                     mapboxGL.setFeatureState(
-                        { source: 'vt-parcels', sourceLayer: 'parcels', id: pnu },
+                        { source: SOURCE_IDS.parcels, sourceLayer: 'parcels', id: pnu },
                         {
                             type: parcel.type,
                             hasTransaction: (parcel.type & 1) !== 0,
@@ -868,12 +938,12 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         const mapboxGL = mapboxGLRef.current;
 
         try {
-            if (!mapboxGL.getLayer('vt-parcels-fill')) return;
+            if (!mapboxGL.getLayer(LAYER_IDS.polygons.parcels.fill)) return;
 
             // 데이터 시각화 비활성화 시 투명하게 (필지 경계만 보임)
             if (!dataVisualizationEnabled) {
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-color', '#E2E8F0');
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-opacity', 0);  // 완전 투명
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-color', '#E2E8F0');
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-opacity', 0);  // 완전 투명
                 logger.log(`🎨 [Polygon] 필지 색상: 투명 (시각화 OFF)`);
                 return;
             }
@@ -906,17 +976,17 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     'rgba(156, 163, 175, 0.15)'
                 ];
 
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-color', priceChangeColorExpr);
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-opacity', 1);  // opacity는 색상 표현식에서 처리
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-opacity-transition', { duration: 300 });
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-color', priceChangeColorExpr);
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-opacity', 1);  // opacity는 색상 표현식에서 처리
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-opacity-transition', { duration: 300 });
                 logger.log(`🎨 [Polygon] 증감률 Feature State 색상 적용`);
                 return;
             }
 
             // 실거래가 모드: 기존 priceColorExpression 사용
             if (priceColorExpression) {
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-color', priceColorExpression);
-                mapboxGL.setPaintProperty('vt-parcels-fill', 'fill-opacity', 0.35);
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-color', priceColorExpression);
+                mapboxGL.setPaintProperty(LAYER_IDS.polygons.parcels.fill, 'fill-opacity', 0.35);
                 // 표현식의 min/max 값 추출해서 로깅 (디버그용)
                 if (Array.isArray(priceColorExpression) && priceColorExpression[0] === 'case') {
                     const interpolateExpr = priceColorExpression[2];
@@ -944,17 +1014,17 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
             // 데이터 시각화 비활성화 시 기본 색상으로 복원
             if (!dataVisualizationEnabled) {
-                if (mapboxGL.getLayer('vt-sido-fill')) {
-                    mapboxGL.setPaintProperty('vt-sido-fill', 'fill-color', defaultColor);
-                    mapboxGL.setPaintProperty('vt-sido-fill', 'fill-opacity', defaultOpacity);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.sido.fill)) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sido.fill, 'fill-color', defaultColor);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sido.fill, 'fill-opacity', defaultOpacity);
                 }
-                if (mapboxGL.getLayer('vt-sig-fill')) {
-                    mapboxGL.setPaintProperty('vt-sig-fill', 'fill-color', defaultColor);
-                    mapboxGL.setPaintProperty('vt-sig-fill', 'fill-opacity', 0.25);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.sig.fill)) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sig.fill, 'fill-color', defaultColor);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sig.fill, 'fill-opacity', 0.25);
                 }
-                if (mapboxGL.getLayer('vt-emd-fill')) {
-                    mapboxGL.setPaintProperty('vt-emd-fill', 'fill-color', defaultColor);
-                    mapboxGL.setPaintProperty('vt-emd-fill', 'fill-opacity', 0.2);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.emd.fill)) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.emd.fill, 'fill-color', defaultColor);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.emd.fill, 'fill-opacity', 0.2);
                 }
                 logger.log(`🎨 [Polygon] 행정구역 색상: 기본값 (시각화 OFF)`);
                 return;
@@ -965,23 +1035,23 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 const colorType = parcelColorMode === 'price-change' ? '증감률' : '가격';
 
                 // 시도 레이어
-                if (mapboxGL.getLayer('vt-sido-fill') && regionColorExpressions.sido) {
-                    mapboxGL.setPaintProperty('vt-sido-fill', 'fill-color', regionColorExpressions.sido);
-                    mapboxGL.setPaintProperty('vt-sido-fill', 'fill-opacity', 0.6);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.sido.fill) && regionColorExpressions.sido) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sido.fill, 'fill-color', regionColorExpressions.sido);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sido.fill, 'fill-opacity', 0.6);
                     logger.log(`🎨 [Polygon] 시도 ${colorType} 색상 적용`);
                 }
 
                 // 시군구 레이어
-                if (mapboxGL.getLayer('vt-sig-fill') && regionColorExpressions.sig) {
-                    mapboxGL.setPaintProperty('vt-sig-fill', 'fill-color', regionColorExpressions.sig);
-                    mapboxGL.setPaintProperty('vt-sig-fill', 'fill-opacity', 0.6);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.sig.fill) && regionColorExpressions.sig) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sig.fill, 'fill-color', regionColorExpressions.sig);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.sig.fill, 'fill-opacity', 0.6);
                     logger.log(`🎨 [Polygon] 시군구 ${colorType} 색상 적용`);
                 }
 
                 // 읍면동 레이어
-                if (mapboxGL.getLayer('vt-emd-fill') && regionColorExpressions.emd) {
-                    mapboxGL.setPaintProperty('vt-emd-fill', 'fill-color', regionColorExpressions.emd);
-                    mapboxGL.setPaintProperty('vt-emd-fill', 'fill-opacity', 0.6);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.emd.fill) && regionColorExpressions.emd) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.emd.fill, 'fill-color', regionColorExpressions.emd);
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.emd.fill, 'fill-opacity', 0.6);
                     logger.log(`🎨 [Polygon] 읍면동 ${colorType} 색상 적용`);
                 }
             }
@@ -1035,7 +1105,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         return new Promise<void>((resolve) => {
             // 공장 아이콘 SVG
             const svgString = `
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${ENTITY_COLORS.factory}">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="${COLORS.entity.factory}">
                     <path d="M4 21V10l4 3V10l4 3V10l4 3V4h4v17H4z"/>
                 </svg>
             `;
@@ -1080,16 +1150,16 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             // 공장 아이콘 레이어 - 줌 12부터 서서히 나타남
             // count가 많을수록 더 진하게 표시
             mbMap.addLayer({
-                id: 'factory-points',
+                id: LAYER_IDS.markers.factories.points,
                 type: 'symbol',
                 source: 'factories',
-                minzoom: ZOOM_EMD.min,  // 줌 12부터 시작
+                minzoom: ZOOM_LEVELS.EMD.min,  // 줌 12부터 시작
                 layout: {
                     'icon-image': 'factory-icon',
                     'icon-size': [
                         'interpolate', ['linear'], ['zoom'],
-                        ZOOM_EMD.min, 0.3,       // 줌 12: 작게
-                        ZOOM_PARCEL.min, 0.5,    // 줌 14: 중간
+                        ZOOM_LEVELS.EMD.min, 0.3,       // 줌 12: 작게
+                        ZOOM_LEVELS.PARCEL.min, 0.5,    // 줌 14: 중간
                         17, 0.7,
                         20, 0.9,
                     ],
@@ -1100,8 +1170,8 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     // count 기반 투명도: 1개=0.5, 2개=0.7, 3개+=1.0
                     'icon-opacity': [
                         'interpolate', ['linear'], ['zoom'],
-                        ZOOM_EMD.min, 0,
-                        ZOOM_PARCEL.min, [
+                        ZOOM_LEVELS.EMD.min, 0,
+                        ZOOM_LEVELS.PARCEL.min, [
                             'interpolate', ['linear'], ['get', 'count'],
                             1, 0.5,    // 1개: 50%
                             2, 0.7,    // 2개: 70%
@@ -1113,7 +1183,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
             // 공장 라벨 (줌 17+) - "이름 외 N개" 형식
             mbMap.addLayer({
-                id: 'factory-labels',
+                id: LAYER_IDS.markers.factories.labels,
                 type: 'symbol',
                 source: 'factories',
                 minzoom: 17,
@@ -1128,7 +1198,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     'text-optional': true,
                 },
                 paint: {
-                    'text-color': ENTITY_COLORS.factory,
+                    'text-color': COLORS.entity.factory,
                     'text-halo-color': '#ffffff',
                     'text-halo-width': 1,
                 },
@@ -1136,7 +1206,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
 
             // 공장 아이콘 클릭 시 상세 정보 표시 (핸들러 저장)
             factoryClickHandlerRef.current = (e: any) => {
-                const features = mbMap.queryRenderedFeatures(e.point, { layers: ['factory-points'] });
+                const features = mbMap.queryRenderedFeatures(e.point, { layers: [LAYER_IDS.markers.factories.points] });
                 if (!features.length) return;
 
                 const factoryId = features[0].properties.id;
@@ -1151,7 +1221,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     });
                 });
             };
-            mbMap.on('click', 'factory-points', factoryClickHandlerRef.current);
+            mbMap.on('click', LAYER_IDS.markers.factories.points, factoryClickHandlerRef.current);
 
             // 커서 변경 (핸들러 저장)
             factoryMouseEnterRef.current = () => {
@@ -1160,14 +1230,14 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
             factoryMouseLeaveRef.current = () => {
                 mbMap.getCanvas().style.cursor = '';
             };
-            mbMap.on('mouseenter', 'factory-points', factoryMouseEnterRef.current);
-            mbMap.on('mouseleave', 'factory-points', factoryMouseLeaveRef.current);
+            mbMap.on('mouseenter', LAYER_IDS.markers.factories.points, factoryMouseEnterRef.current);
+            mbMap.on('mouseleave', LAYER_IDS.markers.factories.points, factoryMouseLeaveRef.current);
 
             logger.log(`🏭 [Factory GL] 공장 아이콘 레이어 추가 완료: ${factoryGeoJSON.features.length}개`);
 
             // 가시성 적용
             const isVisible = useUIStore.getState().visibleLayers.has('factory');
-            setLayerVisibility(mbMap, ['factory-points', 'factory-labels'], isVisible);
+            setLayerVisibility(mbMap, [LAYER_IDS.markers.factories.points, LAYER_IDS.markers.factories.labels], isVisible);
         };
 
         setupFactoryLayer().catch((e) => {
@@ -1178,14 +1248,14 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
         return () => {
             if (!mbMap) return;
             try {
-                if (factoryClickHandlerRef.current && mbMap.getLayer('factory-points')) {
-                    mbMap.off('click', 'factory-points', factoryClickHandlerRef.current);
+                if (factoryClickHandlerRef.current && mbMap.getLayer(LAYER_IDS.markers.factories.points)) {
+                    mbMap.off('click', LAYER_IDS.markers.factories.points, factoryClickHandlerRef.current);
                 }
-                if (factoryMouseEnterRef.current && mbMap.getLayer('factory-points')) {
-                    mbMap.off('mouseenter', 'factory-points', factoryMouseEnterRef.current);
+                if (factoryMouseEnterRef.current && mbMap.getLayer(LAYER_IDS.markers.factories.points)) {
+                    mbMap.off('mouseenter', LAYER_IDS.markers.factories.points, factoryMouseEnterRef.current);
                 }
-                if (factoryMouseLeaveRef.current && mbMap.getLayer('factory-points')) {
-                    mbMap.off('mouseleave', 'factory-points', factoryMouseLeaveRef.current);
+                if (factoryMouseLeaveRef.current && mbMap.getLayer(LAYER_IDS.markers.factories.points)) {
+                    mbMap.off('mouseleave', LAYER_IDS.markers.factories.points, factoryMouseLeaveRef.current);
                 }
             } catch (e) {
                 // 맵이 이미 해제된 경우 무시
@@ -1281,7 +1351,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     timerId = null;
 
                     const complexIdStr = String(focusedComplex.id);
-                    const features = mapboxGL.querySourceFeatures('vt-complex', {
+                    const features = mapboxGL.querySourceFeatures(SOURCE_IDS.complex, {
                         sourceLayer: 'complex',
                         filter: ['==', ['to-string', ['get', 'id']], complexIdStr]
                     });
@@ -1347,7 +1417,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 const complexIdStr = String(focusedComplex.id);
 
                 // 1. 선택한 산업단지 geometry 조회
-                const features = mapboxGL.querySourceFeatures('vt-complex', {
+                const features = mapboxGL.querySourceFeatures(SOURCE_IDS.complex, {
                     sourceLayer: 'complex',
                     filter: ['==', ['to-string', ['get', 'id']], complexIdStr]
                 });
@@ -1397,14 +1467,14 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 }
 
                 // 2. 선택된 산업단지 외곽선 강조 - 미니멀 스타일
-                if (mapboxGL.getLayer('vt-complex-line')) {
-                    mapboxGL.setPaintProperty('vt-complex-line', 'line-color', [
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.complex.line)) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.complex.line, 'line-color', [
                         'case',
                         ['==', ['to-string', ['get', 'id']], complexIdStr],
                         '#F59E0B',  // 선택된 것: 밝은 황색 외곽선
                         '#D97706',  // 비선택: 원래 색상
                     ]);
-                    mapboxGL.setPaintProperty('vt-complex-line', 'line-width', [
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.complex.line, 'line-width', [
                         'case',
                         ['==', ['to-string', ['get', 'id']], complexIdStr],
                         2,  // 선택된 것: 약간 두꺼운 외곽선
@@ -1428,9 +1498,9 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 if (mapboxGL.getLayer('focus-overlay-fill')) {
                     mapboxGL.setPaintProperty('focus-overlay-fill', 'fill-opacity', 0);
                 }
-                if (mapboxGL.getLayer('vt-complex-line')) {
-                    mapboxGL.setPaintProperty('vt-complex-line', 'line-color', '#D97706');
-                    mapboxGL.setPaintProperty('vt-complex-line', 'line-width', 1);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.complex.line)) {
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.complex.line, 'line-color', '#D97706');
+                    mapboxGL.setPaintProperty(LAYER_IDS.polygons.complex.line, 'line-width', 1);
                 }
             }
         } catch (e) {
@@ -1450,35 +1520,35 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 const complexIdStr = String(focusedComplex.id);
 
                 // 용지 레이어: 선택한 산업단지만 필터링
-                if (mapboxGL.getLayer('vt-lots-fill')) {
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.lots.fill)) {
                     const lotsFilter = ['==', ['to-string', ['get', 'complexId']], complexIdStr];
-                    mapboxGL.setFilter('vt-lots-fill', lotsFilter);
-                    mapboxGL.setFilter('vt-lots-line', lotsFilter);
-                    setLayerVisibility(mapboxGL, ['vt-lots-fill', 'vt-lots-line'], focusModeShowLots);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.lots.fill, lotsFilter);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.lots.line, lotsFilter);
+                    setLayerVisibility(mapboxGL, [LAYER_IDS.polygons.lots.fill, LAYER_IDS.polygons.lots.line], focusModeShowLots);
                 }
 
                 // 유치업종 레이어: 선택한 산업단지만 필터링
-                if (mapboxGL.getLayer('vt-industries-fill')) {
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.industries.fill)) {
                     const industriesFilter = ['==', ['to-string', ['get', 'complexId']], complexIdStr];
-                    mapboxGL.setFilter('vt-industries-fill', industriesFilter);
-                    mapboxGL.setFilter('vt-industries-line', industriesFilter);
-                    setLayerVisibility(mapboxGL, ['vt-industries-fill', 'vt-industries-line'], focusModeShowIndustries);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.industries.fill, industriesFilter);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.industries.line, industriesFilter);
+                    setLayerVisibility(mapboxGL, [LAYER_IDS.polygons.industries.fill, LAYER_IDS.polygons.industries.line], focusModeShowIndustries);
                 }
 
                 logger.log(`🗺️ [Focus Mode] complexId="${complexIdStr}" 필터링 적용, 용지=${focusModeShowLots}, 업종=${focusModeShowIndustries}`);
             } else {
                 // 포커스 모드 아닐 때는 필터 제거 + 레이어 토글 상태에 따라
-                if (mapboxGL.getLayer('vt-lots-fill')) {
-                    mapboxGL.setFilter('vt-lots-fill', null);
-                    mapboxGL.setFilter('vt-lots-line', null);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.lots.fill)) {
+                    mapboxGL.setFilter(LAYER_IDS.polygons.lots.fill, null);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.lots.line, null);
                     const showLots = visibleLayers.has('industrial-lot');
-                    setLayerVisibility(mapboxGL, ['vt-lots-fill', 'vt-lots-line'], showLots);
+                    setLayerVisibility(mapboxGL, [LAYER_IDS.polygons.lots.fill, LAYER_IDS.polygons.lots.line], showLots);
                 }
-                if (mapboxGL.getLayer('vt-industries-fill')) {
-                    mapboxGL.setFilter('vt-industries-fill', null);
-                    mapboxGL.setFilter('vt-industries-line', null);
+                if (mapboxGL.getLayer(LAYER_IDS.polygons.industries.fill)) {
+                    mapboxGL.setFilter(LAYER_IDS.polygons.industries.fill, null);
+                    mapboxGL.setFilter(LAYER_IDS.polygons.industries.line, null);
                     const showIndustries = visibleLayers.has('industry-type');
-                    setLayerVisibility(mapboxGL, ['vt-industries-fill', 'vt-industries-line'], showIndustries);
+                    setLayerVisibility(mapboxGL, [LAYER_IDS.polygons.industries.fill, LAYER_IDS.polygons.industries.line], showIndustries);
                 }
             }
         } catch (e) {
@@ -1628,7 +1698,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                             'line-opacity': 0.9,
                             'line-blur': 2,
                         },
-                    }, 'vt-complex-fill');
+                    }, LAYER_IDS.polygons.complex.fill);
 
                     highlightLayersRef.current.push('highlight-highway-bg');
                     logger.log('✅ [DEBUG] 하이라이트 배경선 추가 (label_path 직접 사용)');
@@ -1656,7 +1726,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                             ],
                             'line-opacity': 1,
                         },
-                    }, 'vt-complex-fill');
+                    }, LAYER_IDS.polygons.complex.fill);
 
                     highlightLayersRef.current.push('highlight-highway-fg');
                     logger.log('✅ [DEBUG] 하이라이트 전경선 추가');
@@ -1692,7 +1762,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                             'text-halo-color': '#FFD700',
                             'text-halo-width': 2.5,
                         },
-                    }, 'vt-complex-fill');
+                    }, LAYER_IDS.polygons.complex.fill);
 
                     highlightLayersRef.current.push('highlight-highway-label');
                     logger.log('✅ [DEBUG] 하이라이트 라벨 추가');

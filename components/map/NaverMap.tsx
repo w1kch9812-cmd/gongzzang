@@ -37,6 +37,13 @@ export default function NaverMap() {
     const [memoryInfo, setMemoryInfo] = useState<{ used: number; total: number } | null>(null);
     const glReady = map !== null;
 
+    // ✅ 3D 드래그 상태 (useRef로 관리 - 이벤트 핸들러 클로저 문제 방지)
+    const isDraggingRef = useRef(false);
+    const lastMousePosRef = useRef({ x: 0, y: 0 });
+
+    // ✅ Debounce 타이머 (useRef로 관리 - 메모리 누수 방지)
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+
     // Store에서 줌 레벨 가져오기 (중복 상태 제거)
     const currentZoom = useMapStore((state) => state.currentZoom);
     const setCurrentZoom = useMapStore((state) => state.setCurrentZoom);
@@ -130,16 +137,11 @@ export default function NaverMap() {
             setTilt(45);
             logger.log('🎥 3D 뷰 활성화: pitch=45°, Ctrl+드래그로 회전/틸트 조절');
 
-            // Ctrl + 마우스 드래그로 틸트/회전 조절
-            let isDragging = false;
-            let lastX = 0;
-            let lastY = 0;
-
+            // ✅ Ctrl + 마우스 드래그로 틸트/회전 조절 (useRef 사용)
             const handleMouseDown = (e: MouseEvent) => {
                 if (e.ctrlKey && e.button === 0) { // Ctrl + 좌클릭
-                    isDragging = true;
-                    lastX = e.clientX;
-                    lastY = e.clientY;
+                    isDraggingRef.current = true;
+                    lastMousePosRef.current = { x: e.clientX, y: e.clientY };
                     e.preventDefault();
                     e.stopPropagation();
 
@@ -149,12 +151,11 @@ export default function NaverMap() {
             };
 
             const handleMouseMove = (e: MouseEvent) => {
-                if (!isDragging) return;
+                if (!isDraggingRef.current) return;
 
-                const deltaX = e.clientX - lastX;
-                const deltaY = e.clientY - lastY;
-                lastX = e.clientX;
-                lastY = e.clientY;
+                const deltaX = e.clientX - lastMousePosRef.current.x;
+                const deltaY = e.clientY - lastMousePosRef.current.y;
+                lastMousePosRef.current = { x: e.clientX, y: e.clientY };
 
                 // 현재 값 가져오기
                 const currentBearing = mapboxGL.getBearing();
@@ -177,8 +178,8 @@ export default function NaverMap() {
             };
 
             const handleMouseUp = () => {
-                if (isDragging) {
-                    isDragging = false;
+                if (isDraggingRef.current) {
+                    isDraggingRef.current = false;
                     mapboxGL.getCanvas().style.cursor = '';
                 }
             };
@@ -201,6 +202,11 @@ export default function NaverMap() {
                 window.removeEventListener('mousemove', handleMouseMove);
                 window.removeEventListener('mouseup', handleMouseUp);
                 canvas.removeEventListener('contextmenu', handleContextMenu);
+                // ✅ 커서 복원 (드래그 중 언마운트 시)
+                if (isDraggingRef.current) {
+                    canvas.style.cursor = '';
+                    isDraggingRef.current = false;
+                }
             };
         };
 
@@ -392,34 +398,49 @@ export default function NaverMap() {
     useEffect(() => {
         if (!map) return;
 
-        let debounceTimer: NodeJS.Timeout | null = null;
+        // ⚡ 성능: throttle 타이머 (줌 렉 방지)
+        let throttleTimer: NodeJS.Timeout | null = null;
+        let lastUpdateTime = 0;
+        const THROTTLE_MS = 100; // 100ms throttle (줌 시 렉 방지)
 
         const updateMapState = () => {
-            const zoom = map.getZoom();
-            const bounds = map.getBounds() as any;
+            const now = Date.now();
 
-            // 줌 업데이트
-            const roundedZoom = Math.round(zoom * 10) / 10;
-            const currentRounded = Math.round(currentZoom * 10) / 10;
-            if (roundedZoom !== currentRounded) {
-                setCurrentZoom(zoom);
+            // ⚡ Throttle 적용: 100ms 이내 중복 호출 무시
+            if (throttleTimer || (now - lastUpdateTime < THROTTLE_MS)) {
+                return;
             }
 
-            // 바운즈 업데이트 (가격 색상 보간용)
-            if (bounds) {
-                setCurrentBounds({
-                    minLng: bounds.getMin().lng(),
-                    maxLng: bounds.getMax().lng(),
-                    minLat: bounds.getMin().lat(),
-                    maxLat: bounds.getMax().lat(),
-                });
-            }
+            throttleTimer = setTimeout(() => {
+                throttleTimer = null;
+                lastUpdateTime = Date.now();
 
-            // 위치 감지 (디바운스 적용)
-            if (debounceTimer) clearTimeout(debounceTimer);
-            debounceTimer = setTimeout(() => {
-                detectCurrentLocation();
-            }, 300);
+                const zoom = map.getZoom();
+                const bounds = map.getBounds() as any;
+
+                // 줌 업데이트
+                const roundedZoom = Math.round(zoom * 10) / 10;
+                const currentRounded = Math.round(currentZoom * 10) / 10;
+                if (roundedZoom !== currentRounded) {
+                    setCurrentZoom(zoom);
+                }
+
+                // 바운즈 업데이트 (가격 색상 보간용)
+                if (bounds) {
+                    setCurrentBounds({
+                        minLng: bounds.getMin().lng(),
+                        maxLng: bounds.getMax().lng(),
+                        minLat: bounds.getMin().lat(),
+                        maxLat: bounds.getMax().lat(),
+                    });
+                }
+
+                // ✅ 위치 감지 (디바운스 적용 - useRef 사용)
+                if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+                debounceTimerRef.current = setTimeout(() => {
+                    detectCurrentLocation();
+                }, 300);
+            }, THROTTLE_MS);
         };
 
         const detectCurrentLocation = () => {
@@ -470,7 +491,16 @@ export default function NaverMap() {
 
         return () => {
             window.naver.maps.Event.removeListener(boundsListener);
-            if (debounceTimer) clearTimeout(debounceTimer);
+            // ✅ Throttle 타이머 정리
+            if (throttleTimer) {
+                clearTimeout(throttleTimer);
+                throttleTimer = null;
+            }
+            // ✅ Debounce 타이머 정리
+            if (debounceTimerRef.current) {
+                clearTimeout(debounceTimerRef.current);
+                debounceTimerRef.current = null;
+            }
         };
     }, [map, currentZoom, setCurrentZoom, setCurrentBounds, setCurrentLocation]);
 

@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { LayerType, ParcelColorMode } from '@/types/data';
+import { PANEL } from '@/lib/config/ui.config';
 
 const DEFAULT_VISIBLE_LAYERS: LayerType[] = [
     'parcel',
@@ -125,7 +126,7 @@ export const useUIStore = create<UIStore>()(
         tiltEnabled: false,
         terrainEnabled: false,
 
-        rightSidebarWidth: 48,
+        rightSidebarWidth: PANEL.right.collapsed,
 
         activeSidePanel: null,
 

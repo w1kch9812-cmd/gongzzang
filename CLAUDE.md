@@ -204,14 +204,14 @@ const detail = await loadFactoryDetail(id);  // Factory | null
 
 ## 줌 레벨 구조
 
-> **Single Source of Truth**: `lib/map/zoomConfig.ts`
+> **Single Source of Truth**: `lib/config/map.config.ts`
 
 | 상수 | 범위 | 표시 |
 |------|------|------|
-| ZOOM_SIDO | 0-8 | 시/도 |
-| ZOOM_SIG | 8-12 | 시/군/구 |
-| ZOOM_EMD | 12-14 | 읍/면/동 |
-| ZOOM_PARCEL | 14-22 | 개별 필지 |
+| ZOOM_LEVELS.SIDO | 0-8 | 시/도 |
+| ZOOM_LEVELS.SIG | 8-12 | 시/군/구 |
+| ZOOM_LEVELS.EMD | 12-14 | 읍/면/동 |
+| ZOOM_LEVELS.PARCEL | 14-22 | 개별 필지 |
 
 ### 오버줌(Overzoom) 전략
 

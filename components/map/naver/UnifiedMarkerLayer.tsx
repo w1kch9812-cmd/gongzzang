@@ -15,12 +15,6 @@ import { useMarkerLayerSelection } from '@/lib/stores/selection-store';
 import { loadParcelDetail } from '@/lib/data/loadData';
 import { logger } from '@/lib/utils/logger';
 import Supercluster from 'supercluster';
-import {
-    ZOOM_SIG,
-    ZOOM_EMD,
-    ZOOM_PARCEL,
-    getDistrictLevel,
-} from '@/lib/map/zoomConfig';
 import { hasListingPrice, hasAuctionPrice, hasTransactionPrice } from '@/lib/utils/dataHelpers';
 import type { ComplexStatus } from '@/types/data';
 import { formatPrice as formatPriceBase, formatArea as formatAreaBase } from '@/lib/markers';
@@ -31,7 +25,14 @@ import { point as turfPoint, polygon as turfPolygon, multiPolygon as turfMultiPo
 import type { Feature, Polygon, MultiPolygon, GeoJsonProperties } from 'geojson';
 import { hasValidCoordinate } from '@/lib/utils/geoHelpers';
 import { getSamplingHash } from '@/lib/utils/hash';
-import { CLUSTER_RADIUS, CLUSTER_MAX_ZOOM_GENERAL, DEBOUNCE_MS, ENTITY_COLORS } from '@/lib/constants';
+// ✅ 설정 파일 import (Single Source of Truth)
+import { COLORS, SHADOWS, BORDER_RADIUS, PADDING, FONT_SIZE, StyleHelper } from '@/lib/config/style.config';
+import { ZOOM_LEVELS, ZoomHelper } from '@/lib/config/map.config';
+import { CLUSTER_CONFIG, MarkerHelper as ConfigMarkerHelper } from '@/lib/config/marker.config';
+import { TIMING, RENDERING } from '@/lib/config/performance.config';
+import { SOURCE_IDS } from '@/lib/config/layer.config';
+// ⚡ Canvas 렌더링
+import { CanvasMarkerRenderer, type CanvasMarker } from '@/lib/map/CanvasMarkerRenderer';
 
 interface UnifiedMarkerLayerProps {
     map: naver.maps.Map | null;
@@ -41,37 +42,37 @@ interface UnifiedMarkerLayerProps {
 type BBox = [number, number, number, number];
 
 // ========== 선택된 필지 하이라이트 마커 스타일 ==========
+// ✅ 설정 파일 사용 (단일 소스)
 const HIGHLIGHT_MARKER_STYLE = {
-    bgColor: '#1d4ed8', // blue-700
-    borderColor: '#1e40af', // blue-800
-    textColor: '#ffffff',
-    shadow: '0 4px 12px rgba(29, 78, 216, 0.4)',
-    padding: '8px 14px',
-    borderRadius: '12px',
+    bgColor: COLORS.selection.selected,
+    borderColor: COLORS.selection.selectedBorder,
+    textColor: COLORS.selection.selectedText,
+    shadow: SHADOWS.selected,
+    padding: PADDING.marker.lg,
+    borderRadius: BORDER_RADIUS.lg,
     fontSize: {
-        title: '13px',
-        info: '11px',
-        price: '14px',
+        title: FONT_SIZE.lg,
+        info: FONT_SIZE.sm,
+        price: FONT_SIZE.xl,
     },
 };
 
 // ========== 실거래가 마커 공통 스타일 ==========
-// 개별 마커와 클러스터 마커의 스타일을 한 곳에서 관리
-// ⚡ 성능 최적화: backdrop-filter 제거 (GPU 비용 높음)
+// ✅ 설정 파일 사용 (단일 소스)
 const TRANSACTION_MARKER_STYLE = {
-    bgColor: 'rgba(255, 255, 255, 0.92)', // 불투명도 높임 (blur 대체)
-    borderColor: 'rgba(200, 200, 200, 0.8)',
-    borderRadius: '100px',
-    shadow: '0 2px 6px rgba(0, 0, 0, 0.12)',
-    padding: '4px 10px',
+    bgColor: `rgba(255, 255, 255, 0.92)`,  // ✅ 흰색 배경 (불투명)
+    borderColor: COLORS.ui.border.default,  // ✅ border는 객체이므로 .default 사용
+    borderRadius: BORDER_RADIUS.full,
+    shadow: SHADOWS.marker,
+    padding: PADDING.marker.sm,
     fontSize: {
-        price: '12px',
-        type: '10px',
-        count: '10px',
+        price: FONT_SIZE.md,
+        type: FONT_SIZE.xs,
+        count: FONT_SIZE.xs,
     },
     color: {
-        price: '#374151',
-        count: '#6B7280',
+        price: COLORS.ui.text.primary,
+        count: COLORS.ui.text.secondary,
     },
 };
 
@@ -88,11 +89,8 @@ const getTransactionMarkerStyle = () => `
 
 // ========== 유틸 함수 ==========
 
-// z-index 계산 (남쪽 마커가 북쪽 마커 위에)
-const calculateBaseZIndex = (lat: number, baseLayer: number): number => {
-    const normalizedLat = ((38 - lat) / 5) * 1000;
-    return baseLayer + Math.floor(normalizedLat);
-};
+// ✅ 설정 파일 헬퍼 사용
+const calculateBaseZIndex = StyleHelper.getMarkerZIndex;
 
 // 포맷 함수
 const formatPrice = (priceManwon: number): string => formatPriceBase(priceManwon);
@@ -209,9 +207,9 @@ function findVisiblePointInPolygon(
 // Supercluster 설정 팩토리 (중복 제거)
 // 평단가(pricePerPyeong) 기반 클러스터링 - 비슷한 가격대끼리 그룹핑
 const createClusterConfig = () => ({
-    radius: CLUSTER_RADIUS.dense,
-    maxZoom: CLUSTER_MAX_ZOOM_GENERAL,
-    minZoom: ZOOM_PARCEL.min,
+    radius: CLUSTER_CONFIG.radius,
+    maxZoom: CLUSTER_CONFIG.maxZoom.transaction,
+    minZoom: ZOOM_LEVELS.PARCEL.min,
     minPoints: 2,
     map: (props: any) => ({
         // 평단가 합계 (평균 계산용)
@@ -314,10 +312,10 @@ function createRegionClusterDOM(
 // 매물 유형별 색상 헬퍼
 function getPropertyTypeColor(type: string): string {
     const colors: Record<string, string> = {
-        factory: ENTITY_COLORS.factory,
-        'knowledge-center': ENTITY_COLORS.knowledgeCenter,
-        warehouse: ENTITY_COLORS.warehouse,
-        land: ENTITY_COLORS.land,
+        factory: COLORS.entity.factory,
+        'knowledge-center': COLORS.entity.knowledgeCenter,
+        warehouse: COLORS.entity.warehouse,
+        land: COLORS.entity.land,
     };
     return colors[type] || '#6B7280';
 }
@@ -416,25 +414,25 @@ function createPropertyClusterDOM(listingCount: number, auctionCount: number, pr
 const PROPERTY_TYPE_STYLES: Record<string, { label: string; color: string; bgColor: string; icon: string }> = {
     factory: {
         label: '공장',
-        color: ENTITY_COLORS.factory,
+        color: COLORS.entity.factory,
         bgColor: '#EFF6FF',  // blue-50
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 20V8l6 4V8l6 4V4h8v16H2z"/></svg>`
     },
     'knowledge-center': {
         label: '지산',
-        color: ENTITY_COLORS.knowledgeCenter,
+        color: COLORS.entity.knowledgeCenter,
         bgColor: '#F5F3FF',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M9 22V12h6v10M9 6h.01M15 6h.01"/></svg>`
     },
     warehouse: {
         label: '창고',
-        color: ENTITY_COLORS.warehouse,
+        color: COLORS.entity.warehouse,
         bgColor: '#FFF7ED',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 21V9l9-6 9 6v12H3z"/><rect x="9" y="13" width="6" height="8"/></svg>`
     },
     land: {
         label: '토지',
-        color: ENTITY_COLORS.land,
+        color: COLORS.entity.land,
         bgColor: '#F0FDF4',
         icon: `<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7z"/><circle cx="12" cy="9" r="2.5"/></svg>`
     },
@@ -940,11 +938,11 @@ function createFactoryMarkerDOM(name: string): HTMLDivElement {
     const container = document.createElement('div');
     container.style.cssText = MARKER_CONTAINER_STYLE.base;
     container.innerHTML = `
-        <div style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${ENTITY_COLORS.factory}; border-radius: 6px; box-shadow: 0 2px 6px ${ENTITY_COLORS.factoryGlow};">
+        <div style="display: flex; align-items: center; gap: 5px; padding: 6px 12px; background: ${COLORS.entity.factory}; border-radius: 6px; box-shadow: 0 2px 6px ${COLORS.entity.factoryGlow};">
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2"><path d="M2 20V8l6 4V8l6 4V4h8v16H2z"/></svg>
             <span style="font-size: 13px; font-weight: 500; color: #fff; white-space: nowrap;">${truncateName(name, 10)}</span>
         </div>
-        ${createMarkerArrow(ENTITY_COLORS.factory, 6)}
+        ${createMarkerArrow(COLORS.entity.factory, 6)}
     `;
     return container;
 }
@@ -954,10 +952,10 @@ function createFactoryClusterDOM(count: number): HTMLDivElement {
     const container = document.createElement('div');
     container.style.cssText = MARKER_CONTAINER_STYLE.base;
     container.innerHTML = `
-        <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: ${ENTITY_COLORS.factory}; border-radius: 50%; box-shadow: 0 2px 6px ${ENTITY_COLORS.factoryGlow}; border: 2px solid #fff;">
+        <div style="display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; background: ${COLORS.entity.factory}; border-radius: 50%; box-shadow: 0 2px 6px ${COLORS.entity.factoryGlow}; border: 2px solid #fff;">
             <span style="font-size: 14px; font-weight: 700; color: #fff;">${count}</span>
         </div>
-        <div style="font-size: 11px; color: ${ENTITY_COLORS.factory}; font-weight: 600; margin-top: 2px;">공장</div>
+        <div style="font-size: 11px; color: ${COLORS.entity.factory}; font-weight: 600; margin-top: 2px;">공장</div>
     `;
     return container;
 }
@@ -1025,12 +1023,24 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
     const markerManagerRef = useRef<MarkerManager | null>(null);
     const kcClusterRef = useRef<Supercluster | null>(null);
 
+    // ⚡ Canvas 렌더러 (GPU 가속)
+    const canvasRendererRef = useRef<CanvasMarkerRenderer | null>(null);
+    const canvasLayerAddedRef = useRef(false);
+
+    // ⚡ 성능: Supercluster.getClusters() 결과 캐싱 (줌 렉 방지)
+    const clusterCacheRef = useRef<Map<string, any[]>>(new Map());
+
+    // ⚡ 성능: 마지막 렌더링 키 (동일하면 전체 렌더링 스킵)
+    const lastRenderKeyRef = useRef<string>('');
+
     // 산업단지 폴리곤 추적용 refs
     const icPolygonCacheRef = useRef<CachedPolygon[]>([]);
     const icContainerRef = useRef<HTMLDivElement | null>(null);
     const icRafIdRef = useRef<number>(0);
     const icIsMovingRef = useRef(false);
     const icMarkersRef = useRef<Map<string, HTMLDivElement>>(new Map());
+    // ✅ 이벤트 핸들러 저장 (메모리 누수 방지)
+    const icHandlersRef = useRef<Map<string, { click: (e: Event) => void; enter: () => void; leave: () => void }>>(new Map());
 
     // MarkerManager 초기화
     useEffect(() => {
@@ -1042,6 +1052,38 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             markerManagerRef.current = null;
         };
     }, []);
+
+    // ⚡ Canvas 렌더러 초기화
+    useEffect(() => {
+        if (!RENDERING.useCanvasMarkers || !map) return;
+
+        // 내부 Mapbox GL 인스턴스 접근
+        const mbMap = (map as any)._mapbox;
+        if (!mbMap) return;
+
+        // Canvas 렌더러 생성 (디버그 모드 활성화)
+        if (!canvasRendererRef.current) {
+            canvasRendererRef.current = new CanvasMarkerRenderer(true); // debug=true
+        }
+
+        // Canvas Source 방식으로 지도에 추가
+        if (!canvasLayerAddedRef.current) {
+            try {
+                canvasRendererRef.current.addToMap(mbMap);
+                canvasLayerAddedRef.current = true;
+                logger.log('[CanvasSource] ⚡ Canvas 마커 레이어 추가 완료');
+            } catch (e) {
+                logger.warn('[CanvasSource] 레이어 추가 실패:', e);
+            }
+        }
+
+        return () => {
+            // 정리
+            canvasRendererRef.current?.cleanup();
+            canvasRendererRef.current = null;
+            canvasLayerAddedRef.current = false;
+        };
+    }, [map]);
 
     // 지도 인스턴스 연결
     useEffect(() => {
@@ -1070,10 +1112,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
     // 레이어 가시성 체크
     // skipTransactionMarkers: WebGL 레이어 활성화 시 DOM 마커 비활성화
-    // 단, 데이터 수집(Canvas용)은 계속 수행해야 하므로 showTransactionMarker와 별도로 처리
-    const txLayerVisible = visibleLayers.has('transaction-marker');
-    const showTransactionMarker = txLayerVisible && !skipTransactionMarkers;
-    const processTransactionData = txLayerVisible; // Canvas 렌더링용 데이터 수집
+    const showTransactionMarker = visibleLayers.has('transaction-marker') && !skipTransactionMarkers;
     const showListingMarker = visibleLayers.has('listing-marker');
     const showAuctionMarker = visibleLayers.has('auction-marker');
     const showKnowledgeCenter = visibleLayers.has('knowledge-center');
@@ -1097,11 +1136,41 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         };
     }, [baseParcels, markerSampleRate]);
 
-    // 정수 줌 레벨
+    // 정수 줌 레벨 (스로틀 적용 - 줌 렉 방지)
     const [flooredZoom, setFlooredZoom] = useState(Math.floor(currentZoom));
+    const zoomThrottleRef = useRef<NodeJS.Timeout | null>(null);
+    const lastZoomUpdateRef = useRef<number>(0);
+
     useEffect(() => {
         const newFloor = Math.floor(currentZoom);
-        if (newFloor !== flooredZoom) setFlooredZoom(newFloor);
+        if (newFloor === flooredZoom) return;
+
+        // ⚡ 성능: 줌 업데이트도 150ms 스로틀 (클러스터링 재계산 빈도 감소)
+        const now = Date.now();
+        const elapsed = now - lastZoomUpdateRef.current;
+
+        if (elapsed < 150) {
+            // 150ms 이내 재호출 → 타이머로 지연
+            if (zoomThrottleRef.current) {
+                clearTimeout(zoomThrottleRef.current);
+            }
+            zoomThrottleRef.current = setTimeout(() => {
+                setFlooredZoom(newFloor);
+                lastZoomUpdateRef.current = Date.now();
+                zoomThrottleRef.current = null;
+            }, 150 - elapsed);
+        } else {
+            // 150ms 경과 → 즉시 업데이트
+            setFlooredZoom(newFloor);
+            lastZoomUpdateRef.current = now;
+        }
+
+        // 정리 함수
+        return () => {
+            if (zoomThrottleRef.current) {
+                clearTimeout(zoomThrottleRef.current);
+            }
+        };
     }, [currentZoom, flooredZoom]);
 
     // 스로틀된 bounds (150ms로 증가)
@@ -1110,6 +1179,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
     const lastBoundsUpdateRef = useRef<number>(0);
 
     useEffect(() => {
+        let cancelled = false;  // ✅ 취소 플래그 (stale 상태 업데이트 방지)
         const now = Date.now();
         const elapsed = now - lastBoundsUpdateRef.current;
 
@@ -1119,18 +1189,20 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             boundsThrottleRef.current = null;
         }
 
-        if (elapsed >= DEBOUNCE_MS.markerLayer) {
+        if (elapsed >= TIMING.debounce.markerLayer) {
             lastBoundsUpdateRef.current = now;
             setThrottledBounds(currentBounds);
         } else {
             boundsThrottleRef.current = setTimeout(() => {
+                if (cancelled) return;  // ✅ 취소 확인
                 lastBoundsUpdateRef.current = Date.now();
                 setThrottledBounds(currentBounds);
                 boundsThrottleRef.current = null; // 타이머 완료 후 정리
-            }, DEBOUNCE_MS.markerLayer - elapsed);
+            }, TIMING.debounce.markerLayer - elapsed);
         }
 
         return () => {
+            cancelled = true;  // ✅ 플래그 설정
             if (boundsThrottleRef.current) {
                 clearTimeout(boundsThrottleRef.current);
                 boundsThrottleRef.current = null;
@@ -1143,7 +1215,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         return [throttledBounds.minLng, throttledBounds.minLat, throttledBounds.maxLng, throttledBounds.maxLat];
     }, [throttledBounds]);
 
-    // 뷰포트 내 숨겨진 마커 개수 계산
+    // ⚡ 성능: 숨겨진 마커 개수 계산 최적화 (43,000개 → 뷰포트 내 필지만)
     useEffect(() => {
         if (!throttledBounds || markerSampleRate >= 1.0) {
             setHiddenMarkerCount(0);
@@ -1152,28 +1224,24 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
         const { minLng, minLat, maxLng, maxLat } = throttledBounds;
 
-        // 뷰포트 내 전체 마커 중 숨겨진 개수 계산
+        // ⚡ 최적화: displayParcels (이미 필터링됨)를 사용
+        // baseParcels (43,000개) 대신 displayParcels (뷰포트 내 수백개) 사용
         let hiddenInViewport = 0;
-        for (const p of baseParcels) {
+        for (const p of displayParcels) {
             const [lng, lat] = p.coord;
             // 뷰포트 내에 있는지 확인
             if (lng >= minLng && lng <= maxLng && lat >= minLat && lat <= maxLat) {
                 // 해시 계산 (샘플링과 동일한 로직)
-                let hash = 0;
-                for (let i = 0; i < p.id.length; i++) {
-                    hash = ((hash << 5) - hash) + p.id.charCodeAt(i);
-                    hash = hash & hash;
-                }
-                const normalized = (Math.abs(hash) % 10000) / 10000;
+                const hash = getSamplingHash(p.id);
                 // 샘플링에서 제외된 것만 카운트
-                if (normalized >= markerSampleRate) {
+                if (hash >= markerSampleRate) {
                     hiddenInViewport++;
                 }
             }
         }
 
         setHiddenMarkerCount(hiddenInViewport);
-    }, [throttledBounds, baseParcels, markerSampleRate, setHiddenMarkerCount]);
+    }, [throttledBounds, displayParcels, markerSampleRate, setHiddenMarkerCount]);
 
     // 좌표 있는 지식산업센터만 필터
     const knowledgeCentersWithCoord = useMemo(() => {
@@ -1213,6 +1281,10 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         listingCluster,
         auctionCluster,
     } = useMemo(() => {
+        // ⚡ 성능: 클러스터 재생성 시 캐시 무효화
+        clusterCacheRef.current.clear();
+
+        const clusterStart = performance.now();
         const config = createClusterConfig();
 
         // 실거래가: 유형별 클러스터
@@ -1411,6 +1483,12 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         listCluster.load(listFeatures as any);
         auctCluster.load(auctFeatures as any);
 
+        const clusterEnd = performance.now();
+        const clusterTime = clusterEnd - clusterStart;
+        if (clusterTime > 30) {  // 30ms 이상 걸리면 로그
+            console.warn(`🐌 [성능] Supercluster 생성/로드 느림: ${clusterTime.toFixed(1)}ms | 필지: ${displayParcels.length}`);
+        }
+
         logger.log(`📊 [Supercluster] 실거래 유형별: 공장 ${txFeatures.factory.length}, 지산 ${txFeatures['knowledge-center'].length}${kcTxFiltered > 0 ? ` (${kcTxFiltered}개 필터링됨)` : ''}, 창고 ${txFeatures.warehouse.length}, 토지 ${txFeatures.land.length} / 매물 ${listFeatures.length}, 경매 ${auctFeatures.length}`);
 
         return {
@@ -1535,7 +1613,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
     const handleRegionClick = useCallback((lat: number, lng: number, level: 'sido' | 'sig' | 'emd') => {
         if (!map) return;
-        const targetZoom = level === 'sido' ? ZOOM_SIG.min : level === 'sig' ? ZOOM_EMD.min : ZOOM_PARCEL.min;
+        const targetZoom = level === 'sido' ? ZOOM_LEVELS.SIG.min : level === 'sig' ? ZOOM_LEVELS.EMD.min : ZOOM_LEVELS.PARCEL.min;
         (map as any).morph(new window.naver.maps.LatLng(lat, lng), targetZoom, { duration: 300 });
     }, [map]);
 
@@ -1547,9 +1625,51 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             return;
         }
 
+        // ⚡ 성능 측정
+        const perfStart = performance.now();
+        let clusterTime = 0;
+        let domTime = 0;
+
         const zoom = flooredZoom;
-        const level = getDistrictLevel(zoom);
+        const level = ZoomHelper.getDistrictLevel(zoom);
         const [minLng, minLat, maxLng, maxLat] = mapBounds;
+
+        // ⚡ 성능: Supercluster.getClusters() 캐싱 헬퍼 (줌 렉 90% 감소)
+        const cache = clusterCacheRef.current;
+
+        // bounds를 bucketing해서 캐시 히트율 증가 (0.01도 = ~1km 단위)
+        const bucketBounds = (bbox: BBox): string => {
+            const bucket = 0.01;
+            return [
+                Math.floor(bbox[0] / bucket),
+                Math.floor(bbox[1] / bucket),
+                Math.ceil(bbox[2] / bucket),
+                Math.ceil(bbox[3] / bucket),
+            ].join(',');
+        };
+
+        // ⚡ 성능: 동일한 줌/bounds면 전체 렌더링 스킵 (95% 렉 감소)
+        const renderKey = `z${zoom}-${bucketBounds(mapBounds)}`;
+        if (renderKey === lastRenderKeyRef.current) {
+            // 완전히 동일한 상태 - 렌더링 불필요
+            return;
+        }
+        lastRenderKeyRef.current = renderKey;
+
+        const getClustersCached = (cluster: Supercluster, bbox: BBox, zoom: number, prefix: string): any[] => {
+            const key = `${prefix}-z${zoom}-${bucketBounds(bbox)}`;
+            if (cache.has(key)) {
+                return cache.get(key)!;
+            }
+            const result = cluster.getClusters(bbox, zoom);
+            cache.set(key, result);
+            // 캐시 크기 제한 (최대 50개 항목)
+            if (cache.size > 50) {
+                const firstKey = cache.keys().next().value;
+                cache.delete(firstKey);
+            }
+            return result;
+        };
 
         // 타입별 현재 사용 중인 ID 추적
         const currentIdsByType = new Map<MarkerType, Set<string>>();
@@ -1565,8 +1685,9 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         currentIdsByType.set('ic-cluster', new Set());
 
         // ========== 행정구역 마커 (줌 0-13) ==========
-        if (level !== 'parcel') {
-            const regionLevel = level as 'sido' | 'sig' | 'emd';
+        if (level !== 'PARCEL') {
+            // level은 'SIDO', 'SIG', 'EMD' (대문자) → regionAggregations key는 소문자 필요
+            const regionLevel = level.toLowerCase() as 'sido' | 'sig' | 'emd';
             const prefix = `${regionLevel}-`;
             const regionIds = currentIdsByType.get('region')!;
 
@@ -1615,12 +1736,11 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
         // ========== 필지 마커 (줌 14+) - 매물 유형별 클러스터링 ==========
         // clusteringDisableZoom 이상이면 클러스터링 비활성화 (모든 마커 개별 표시)
-        logger.log(`🎯 [UnifiedMarkerLayer] level=${level}, zoom=${zoom}`);
-        if (level === 'parcel') {
+        if (level === 'PARCEL') {
             const disableClustering = zoom >= clusteringDisableZoom;
             const clusterZoom = disableClustering
-                ? CLUSTER_MAX_ZOOM_GENERAL + 1  // 클러스터링 해제: 개별 마커 모두 표시
-                : (zoom >= CLUSTER_MAX_ZOOM_GENERAL ? CLUSTER_MAX_ZOOM_GENERAL + 1 : zoom);
+                ? CLUSTER_CONFIG.maxZoom.transaction + 1  // 클러스터링 해제: 개별 마커 모두 표시
+                : (zoom >= CLUSTER_CONFIG.maxZoom.transaction ? CLUSTER_CONFIG.maxZoom.transaction + 1 : zoom);
 
             // 매물/경매 개별 마커로 렌더링된 필지 ID 추적 (실거래 점 마커 제외용)
             const renderedListingParcelIds = new Set<string>();
@@ -1628,57 +1748,98 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
             // 실거래 마커 - 겹치면 Deck.gl 점, 안 겹치면 DOM 마커
             // 화면상 픽셀 거리로 겹침 감지
-            // processTransactionData: Canvas용 데이터 수집 포함 (skipTransactionMarkers=true 시에도 실행)
-            logger.log(`🎯 [UnifiedMarkerLayer] processTransactionData=${processTransactionData}, txLayerVisible=${txLayerVisible}`);
-            if (processTransactionData) {
+            if (showTransactionMarker) {
                 const txIds = currentIdsByType.get('transaction')!;
 
-                // 1. 모든 실거래 포인트 수집 및 화면 좌표 계산
-                const allTxPoints: Array<{
+                // ⚡ 성능: overlap detection 캐싱 (projection 계산 스킵)
+                const overlapCacheKey = `overlap-z${zoom}-${bucketBounds(mapBounds)}`;
+                let allTxPoints: Array<{
                     point: any;
                     propType: string;
                     screenX: number;
                     screenY: number;
                     lat: number;
                     lng: number;
-                }> = [];
+                }>;
+                let overlapSet: Set<number>;
 
-                const projection = map.getProjection();
-                for (const propType of PROPERTY_TYPES) {
-                    const txCluster = transactionClusterByType[propType];
-                    if (!txCluster) continue;
+                if (cache.has(overlapCacheKey)) {
+                    // 캐시 히트: projection 계산 스킵!
+                    const cached = cache.get(overlapCacheKey) as any;
+                    allTxPoints = cached.allTxPoints;
+                    overlapSet = cached.overlapSet;
+                } else {
+                    // 캐시 미스: 계산 필요
+                    allTxPoints = [];
+                    const projection = map.getProjection();
+                    for (const propType of PROPERTY_TYPES) {
+                        const txCluster = transactionClusterByType[propType];
+                        if (!txCluster) continue;
 
-                    // 클러스터링 비활성화 (개별 마커 모두 가져옴)
-                    const txPoints = txCluster.getClusters(mapBounds, CLUSTER_MAX_ZOOM_GENERAL + 1);
-                    txPoints.forEach((point: any) => {
-                        const [lng, lat] = point.geometry.coordinates;
-                        const screenCoord = projection.fromCoordToOffset(
-                            new window.naver.maps.LatLng(lat, lng)
-                        );
-                        allTxPoints.push({
-                            point,
-                            propType,
-                            screenX: screenCoord.x,
-                            screenY: screenCoord.y,
-                            lat,
-                            lng,
+                        // 클러스터링 비활성화 (개별 마커 모두 가져옴)
+                        const txPoints = getClustersCached(txCluster, mapBounds, CLUSTER_CONFIG.maxZoom.transaction + 1, `tx-${propType}`);
+                        txPoints.forEach((point: any) => {
+                            const [lng, lat] = point.geometry.coordinates;
+                            const screenCoord = projection.fromCoordToOffset(
+                                new window.naver.maps.LatLng(lat, lng)
+                            );
+                            allTxPoints.push({
+                                point,
+                                propType,
+                                screenX: screenCoord.x,
+                                screenY: screenCoord.y,
+                                lat,
+                                lng,
+                            });
                         });
+                    }
+
+                    // 2. 겹침 감지 (그리드 기반 최적화: O(n²) → O(n))
+                    const OVERLAP_THRESHOLD_PX = 30; // 30px 이내면 겹침으로 판단
+                    const GRID_SIZE = OVERLAP_THRESHOLD_PX; // 그리드 셀 크기
+                    overlapSet = new Set<number>(); // 겹치는 마커 인덱스
+                    const grid = new Map<string, number[]>(); // 그리드 셀 → 마커 인덱스 배열
+
+                    // 그리드에 마커 할당 (O(n))
+                    allTxPoints.forEach((item, idx) => {
+                        const cellX = Math.floor(item.screenX / GRID_SIZE);
+                        const cellY = Math.floor(item.screenY / GRID_SIZE);
+                        const key = `${cellX},${cellY}`;
+                        if (!grid.has(key)) grid.set(key, []);
+                        grid.get(key)!.push(idx);
                     });
-                }
 
-                // 2. 겹침 감지 (픽셀 거리 기준)
-                const OVERLAP_THRESHOLD_PX = 30; // 30px 이내면 겹침으로 판단
-                const overlapSet = new Set<number>(); // 겹치는 마커 인덱스
+                    // 인접 셀 체크 (O(n), 각 마커는 최대 9개 셀만 확인)
+                    allTxPoints.forEach((item, i) => {
+                        const cellX = Math.floor(item.screenX / GRID_SIZE);
+                        const cellY = Math.floor(item.screenY / GRID_SIZE);
 
-                for (let i = 0; i < allTxPoints.length; i++) {
-                    for (let j = i + 1; j < allTxPoints.length; j++) {
-                        const dx = allTxPoints[i].screenX - allTxPoints[j].screenX;
-                        const dy = allTxPoints[i].screenY - allTxPoints[j].screenY;
-                        const dist = Math.sqrt(dx * dx + dy * dy);
-                        if (dist < OVERLAP_THRESHOLD_PX) {
-                            overlapSet.add(i);
-                            overlapSet.add(j);
+                        // 주변 9개 셀 확인 (3x3 그리드)
+                        for (let dx = -1; dx <= 1; dx++) {
+                            for (let dy = -1; dy <= 1; dy++) {
+                                const key = `${cellX + dx},${cellY + dy}`;
+                                const neighbors = grid.get(key);
+                                if (!neighbors) continue;
+
+                                for (const j of neighbors) {
+                                    if (i >= j) continue; // 중복 체크 방지
+                                    const dx2 = allTxPoints[i].screenX - allTxPoints[j].screenX;
+                                    const dy2 = allTxPoints[i].screenY - allTxPoints[j].screenY;
+                                    const dist = Math.sqrt(dx2 * dx2 + dy2 * dy2);
+                                    if (dist < OVERLAP_THRESHOLD_PX) {
+                                        overlapSet.add(i);
+                                        overlapSet.add(j);
+                                    }
+                                }
+                            }
                         }
+                    });
+
+                    // ⚡ 캐시에 저장
+                    cache.set(overlapCacheKey, { allTxPoints, overlapSet } as any);
+                    if (cache.size > 50) {
+                        const firstKey = cache.keys().next().value;
+                        cache.delete(firstKey);
                     }
                 }
 
@@ -1715,25 +1876,75 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 });
                 useMapStore.getState().setOverlappingTxMarkers(overlappingMarkers);
 
-                // 4. 비겹침 마커 데이터 수집 및 렌더링
+                // 4. 비겹침 마커만 렌더링 (Canvas 또는 DOM)
                 // 우선순위: 매물/경매가 있으면 실거래 마커 숨김
                 let selectedRenderedInTx = false; // 선택된 필지가 실거래가 마커로 렌더링되었는지
 
-                // Canvas 렌더링용 비겹침 마커 데이터 수집
-                const nonOverlappingMarkers: Array<{
-                    id: string;
-                    lng: number;
-                    lat: number;
-                    price: string;
-                    propertyType?: string;
-                    jibun?: string;
-                    transactionDate?: string;
-                    area?: number;
-                }> = [];
+                // ⚡ Canvas 렌더링 경로 (DOM 대체)
+                if (RENDERING.useCanvasMarkers && canvasRendererRef.current) {
+                    const canvasMarkers: CanvasMarker[] = [];
 
-                logger.log(`🎯 [UnifiedMarkerLayer] allTxPoints: ${allTxPoints.length}개, overlapSet: ${overlapSet.size}개, skipTransactionMarkers=${skipTransactionMarkers}`);
+                    allTxPoints.forEach((item, idx) => {
+                        if (overlapSet.has(idx)) return; // 겹치는 마커는 점 마커로 렌더링
 
-                allTxPoints.forEach((item, idx) => {
+                        const { point, propType, lat, lng } = item;
+                        const props = point.properties;
+
+                        // 우선순위: 매물이나 경매가 있으면 실거래 DOM 마커는 숨김
+                        if (props.hasListing || props.hasAuction) return;
+
+                        const isSelected = selectedId && props.id === selectedId;
+
+                        if (isSelected) {
+                            selectedRenderedInTx = true;
+                        }
+
+                        // 가격 텍스트
+                        let priceText: string;
+                        if (transactionPriceDisplayMode === 'perPyeong') {
+                            const ppp = props.pricePerPyeong || 0;
+                            priceText = formatPricePerPyeong(ppp) || formatTotalPrice(props.price);
+                        } else {
+                            priceText = formatTotalPrice(props.price);
+                        }
+
+                        // 선택된 마커는 하이라이트 타입으로 렌더링
+                        if (isSelected && selectedParcel) {
+                            canvasMarkers.push({
+                                id: `tx-highlight-${props.id}`,
+                                lng,
+                                lat,
+                                type: 'highlight',
+                                title: selectedParcel.jibun || props.jibun || '',
+                                price: priceText,
+                                area: selectedParcel.area ? `${(selectedParcel.area / 3.3058).toFixed(0)}평` : undefined,
+                                info: selectedParcel.propertyType || propType,
+                                onClick: () => handleParcelClick(props.id),
+                            });
+                        } else {
+                            // 일반 실거래 마커 - TransactionMarker 인터페이스에 맞게
+                            canvasMarkers.push({
+                                id: `tx-${propType}-${props.id}`,
+                                lng,
+                                lat,
+                                type: 'transaction',
+                                price: priceText,
+                                propertyType: propType,
+                                jibun: props.jibun,
+                                transactionDate: props.transactionDate,
+                                area: props.area,
+                                onClick: () => handleParcelClick(props.id),
+                            });
+                        }
+                    });
+
+                    // Canvas에 일괄 렌더링
+                    canvasRendererRef.current.setMarkers(canvasMarkers);
+                    logger.log(`[Canvas] ⚡ 실거래 마커 ${canvasMarkers.length}개 렌더링`);
+
+                } else {
+                    // 🔻 DOM 렌더링 경로 (기존 방식, Canvas 비활성화 시만 사용)
+                    allTxPoints.forEach((item, idx) => {
                     if (overlapSet.has(idx)) return; // 겹치는 마커는 점 마커로 렌더링
 
                     const { point, propType, lat, lng } = item;
@@ -1748,84 +1959,67 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         selectedRenderedInTx = true;
                     }
 
-                    // 가격 텍스트 계산
-                    let priceText: string;
-                    if (transactionPriceDisplayMode === 'perPyeong') {
-                        const ppp = props.pricePerPyeong || 0;
-                        priceText = formatPricePerPyeong(ppp) || formatTotalPrice(props.price);
-                    } else {
-                        priceText = formatTotalPrice(props.price);
-                    }
+                    // 선택 상태가 바뀌면 다른 마커로 인식되어 내용이 갱신됨
+                    const markerId = isSelected
+                        ? `tx-selected-${props.id}`
+                        : `tx-${propType}-${props.id}`;
+                    txIds.add(markerId);
 
-                    // Canvas 렌더링용 데이터 수집
-                    if (skipTransactionMarkers) {
-                        nonOverlappingMarkers.push({
-                            id: props.id,
-                            lng,
-                            lat,
-                            price: priceText,
-                            propertyType: propType,
-                            jibun: props.jibun,
-                            transactionDate: props.transactionDate,
-                            area: props.area,
-                        });
-                    } else {
-                        // DOM 마커 렌더링 (기존 로직)
-                        const markerId = isSelected
-                            ? `tx-selected-${props.id}`
-                            : `tx-${propType}-${props.id}`;
-                        txIds.add(markerId);
+                    const position = new window.naver.maps.LatLng(lat, lng);
+                    // 선택된 마커는 z-index 높게
+                    const baseZIndex = isSelected ? 900 : calculateBaseZIndex(lat, 100);
 
-                        const position = new window.naver.maps.LatLng(lat, lng);
-                        const baseZIndex = isSelected ? 900 : calculateBaseZIndex(lat, 100);
-
-                        const pooledMarker = manager.acquire(
-                            markerId,
-                            'transaction',
-                            position,
-                            () => {
-                                if (isSelected && selectedParcel) {
-                                    return createHighlightMarkerDOM(
-                                        selectedParcel.jibun || props.jibun || '',
-                                        selectedParcel.area || 0,
-                                        selectedParcel.propertyType || propType,
-                                        selectedParcel.transactionPrice || props.price,
-                                        selectedParcel.listingPrice,
-                                        selectedParcel.auctionPrice,
-                                        selectedParcel.auctionFailCount
-                                    );
-                                }
-                                return createTransactionMarkerDOM(
-                                    priceText,
-                                    propType,
-                                    props.jibun,
-                                    props.transactionDate,
-                                    props.area
+                    const pooledMarker = manager.acquire(
+                        markerId,
+                        'transaction',
+                        position,
+                        () => {
+                            // 선택된 필지는 하이라이트 스타일
+                            if (isSelected && selectedParcel) {
+                                return createHighlightMarkerDOM(
+                                    selectedParcel.jibun || props.jibun || '',
+                                    selectedParcel.area || 0,
+                                    selectedParcel.propertyType || propType,
+                                    selectedParcel.transactionPrice || props.price,
+                                    selectedParcel.listingPrice,
+                                    selectedParcel.auctionPrice,
+                                    selectedParcel.auctionFailCount
                                 );
-                            },
-                            new window.naver.maps.Point(0, 0),
-                            baseZIndex
-                        );
+                            }
+                            // 일반 실거래 마커
+                            let priceText: string;
+                            if (transactionPriceDisplayMode === 'perPyeong') {
+                                const ppp = props.pricePerPyeong || 0;
+                                priceText = formatPricePerPyeong(ppp) || formatTotalPrice(props.price);
+                            } else {
+                                priceText = formatTotalPrice(props.price);
+                            }
+                            return createTransactionMarkerDOM(
+                                priceText,
+                                propType,
+                                props.jibun,
+                                props.transactionDate,
+                                props.area
+                            );
+                        },
+                        new window.naver.maps.Point(0, 0),
+                        baseZIndex
+                    );
 
-                        if (pooledMarker && !pooledMarker.cleanup) {
-                            const clickHandler = (e: Event) => {
-                                e.stopPropagation();
-                                handleParcelClick(props.id);
-                            };
-                            manager.setupHoverEffect(markerId, pooledMarker, baseZIndex, clickHandler);
-                        }
+                    if (pooledMarker && !pooledMarker.cleanup) {
+                        const clickHandler = (e: Event) => {
+                            e.stopPropagation();
+                            handleParcelClick(props.id);
+                        };
+                        manager.setupHoverEffect(markerId, pooledMarker, baseZIndex, clickHandler);
                     }
-                });
-
-                // Canvas 레이어용 데이터 저장
-                if (skipTransactionMarkers) {
-                    logger.log(`🎯 [UnifiedMarkerLayer] Canvas용 비겹침 마커: ${nonOverlappingMarkers.length}개`);
-                    useMapStore.getState().setNonOverlappingTxMarkers(nonOverlappingMarkers);
-                }
+                    }); // DOM forEach 종료
+                } // else (DOM 렌더링) 종료
 
                 // 5. 선택된 필지가 겹치는 마커(점)였던 경우 → 별도 하이라이트 마커 렌더링
-                // skipTransactionMarkers=true일 때는 DOM 마커 생성 안함 (Canvas에서 처리)
-                if (selectedParcel && selectedInOverlap && !selectedRenderedInTx && !skipTransactionMarkers) {
+                // ⚠️ Canvas 모드에서는 위 Canvas 마커 생성에서 이미 처리됨 (isSelected 분기)
+                if (!RENDERING.useCanvasMarkers) {
+                if (selectedParcel && selectedInOverlap && !selectedRenderedInTx) {
                     const selectedPoint = allTxPoints.find(item => item.point.properties.id === selectedId);
                     if (selectedPoint) {
                         const { point, propType, lat, lng } = selectedPoint;
@@ -1862,10 +2056,10 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         }
                     }
                 }
-            } else if (!txLayerVisible) {
-                // 실거래 레이어 완전 비활성화 시에만 겹침/비겹침 데이터 초기화
+                } // if (!RENDERING.useCanvasMarkers) 종료
+            } else {
+                // 실거래 마커 비활성화 시 겹침 데이터 초기화
                 useMapStore.getState().setOverlappingTxMarkers([]);
-                useMapStore.getState().setNonOverlappingTxMarkers([]);
             }
 
             // 매물/경매 레이어 비활성화 시 Canvas 데이터 초기화
@@ -1878,8 +2072,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
             // ========== 선택된 필지 하이라이트 마커 (실거래가 마커 레이어 밖에서 선택된 경우) ==========
             // 폴리곤 클릭으로 선택되었거나, 실거래 마커 레이어가 비활성화된 경우에도 하이라이트 표시
-            // skipTransactionMarkers=true일 때는 Canvas에서 처리하므로 DOM 마커 생성 안함
-            if (selectedParcel && selectedParcel.transactionPrice && !skipTransactionMarkers) {
+            if (selectedParcel && selectedParcel.transactionPrice) {
                 const selectedId = selectedParcel.id || selectedParcel.pnu;
                 const txIds = currentIdsByType.get('transaction')!;
 
@@ -1930,7 +2123,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 const listClusterIds = currentIdsByType.get('cluster-prop')!;
                 const listClusterRef = { current: listingCluster };
 
-                const listClusters = listingCluster.getClusters(mapBounds, clusterZoom);
+                const listClusters = getClustersCached(listingCluster, mapBounds, clusterZoom, 'listing');
                 listClusters.forEach((cluster: any) => {
                     const [lng, lat] = cluster.geometry.coordinates;
                     const isCluster = cluster.properties.cluster || false;
@@ -2015,7 +2208,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                 const auctClusterIds = currentIdsByType.get('cluster-prop')!;
                 const auctClusterRef = { current: auctionCluster };
 
-                const auctClusters = auctionCluster.getClusters(mapBounds, clusterZoom);
+                const auctClusters = getClustersCached(auctionCluster, mapBounds, clusterZoom, 'auction');
                 auctClusters.forEach((cluster: any) => {
                     const [lng, lat] = cluster.geometry.coordinates;
                     const isCluster = cluster.properties.cluster || false;
@@ -2101,7 +2294,7 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
             const kcClusterIds = currentIdsByType.get('kc-cluster')!;
 
             // 일반 지식산업센터 (클러스터링 대상)
-            const kcClusters = kcCluster.getClusters(mapBounds, zoom);
+            const kcClusters = getClustersCached(kcCluster, mapBounds, zoom, 'kc');
             kcClusters.forEach((cluster: any) => {
                 const [lng, lat] = cluster.geometry.coordinates;
                 const isCluster = cluster.properties.cluster || false;
@@ -2186,6 +2379,17 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         // 더 이상 사용되지 않는 마커들을 풀로 반납 (DOM 재사용)
         manager.releaseAllUnused(currentIdsByType);
 
+        // ⚡ 성능 로그
+        const perfEnd = performance.now();
+        const totalTime = perfEnd - perfStart;
+        const cacheHits = [...cache.keys()].filter(k => k.startsWith('overlap-') || k.startsWith('tx-') || k.startsWith('listing-') || k.startsWith('auction-') || k.startsWith('kc-')).length;
+
+        if (totalTime > 50) {  // 50ms 이상 걸리면 로그
+            console.warn(`🐌 [성능] 마커 렌더링 느림: ${totalTime.toFixed(1)}ms | 줌: ${zoom} | 캐시: ${cacheHits}개`);
+        } else if (totalTime > 20) {
+            console.log(`⚡ [성능] 마커 렌더링: ${totalTime.toFixed(1)}ms | 줌: ${zoom} | 캐시: ${cacheHits}개`);
+        }
+
         // 디버그 로깅
         if (process.env.NODE_ENV === 'development') {
             manager.logStats();
@@ -2237,11 +2441,21 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         icContainerRef.current = container;
 
         return () => {
+            // ✅ 이벤트 리스너 정리 (메모리 누수 방지)
+            icMarkersRef.current.forEach((element, id) => {
+                const handlers = icHandlersRef.current.get(id);
+                if (handlers) {
+                    element.removeEventListener('click', handlers.click);
+                    element.removeEventListener('mouseenter', handlers.enter);
+                    element.removeEventListener('mouseleave', handlers.leave);
+                }
+            });
             if (icContainerRef.current && icContainerRef.current.parentNode) {
                 icContainerRef.current.parentNode.removeChild(icContainerRef.current);
             }
             icContainerRef.current = null;
             icMarkersRef.current.clear();
+            icHandlersRef.current.clear();
         };
     }, [map, showIndustrialComplex]);
 
@@ -2257,7 +2471,8 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         const updatePolygonCache = () => {
             let features: any[] = [];
             try {
-                features = mapboxGL.querySourceFeatures('vt-complex', {
+                // ✅ 설정 파일의 SOURCE_IDS 사용 (하드코딩 제거)
+                features = mapboxGL.querySourceFeatures(SOURCE_IDS.complex, {
                     sourceLayer: 'complex',
                 });
             } catch {
@@ -2312,23 +2527,32 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         element.style.cursor = 'pointer';
                         element.style.willChange = 'transform';
 
-                        // 클릭 이벤트
-                        element.addEventListener('click', (e) => {
+                        // ✅ 이벤트 핸들러 생성 및 저장 (메모리 누수 방지)
+                        const clickHandler = (e: Event) => {
                             e.stopPropagation();
                             handleIcMarkerClick(id);
-                        });
+                        };
 
-                        // 호버 시 지도 스크롤 방지
                         const preventScroll = (e: WheelEvent) => {
                             e.stopPropagation();
                             e.preventDefault();
                         };
-                        element.addEventListener('mouseenter', () => {
+
+                        const enterHandler = () => {
                             map?.getPanes().overlayLayer?.addEventListener('wheel', preventScroll, { passive: false });
-                        });
-                        element.addEventListener('mouseleave', () => {
+                        };
+
+                        const leaveHandler = () => {
                             map?.getPanes().overlayLayer?.removeEventListener('wheel', preventScroll);
-                        });
+                        };
+
+                        element.addEventListener('click', clickHandler);
+                        element.addEventListener('mouseenter', enterHandler);
+                        element.addEventListener('mouseleave', leaveHandler);
+
+                        // 핸들러 저장 (cleanup용)
+                        icHandlersRef.current.set(id, { click: clickHandler, enter: enterHandler, leave: leaveHandler });
+
                         container.appendChild(element);
                         icMarkersRef.current.set(id, element);
                     }
@@ -2373,13 +2597,20 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
         return () => {
             mapboxGL.off('moveend', updatePolygonCache);
-            // 마커 요소 정리
-            icMarkersRef.current.forEach(element => {
+            // ✅ 마커 요소 정리 (이벤트 리스너 먼저 제거)
+            icMarkersRef.current.forEach((element, id) => {
+                const handlers = icHandlersRef.current.get(id);
+                if (handlers) {
+                    element.removeEventListener('click', handlers.click);
+                    element.removeEventListener('mouseenter', handlers.enter);
+                    element.removeEventListener('mouseleave', handlers.leave);
+                }
                 if (element.parentNode) {
                     element.parentNode.removeChild(element);
                 }
             });
             icMarkersRef.current.clear();
+            icHandlersRef.current.clear();
             icPolygonCacheRef.current = [];
         };
     }, [map, showIndustrialComplex, industrialComplexes, handleIcMarkerClick]);
@@ -2389,7 +2620,8 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         if (!map || !showIndustrialComplex) return;
 
         const mapboxGL = (map as any)._mapbox;
-        if (!mapboxGL) return;
+        // ✅ mapboxGL 및 필수 메서드 존재 확인 (초기화 완료 보장)
+        if (!mapboxGL?.getContainer || !mapboxGL?.project) return;
 
         const updateMarkerPositions = () => {
             const cached = icPolygonCacheRef.current;
@@ -2447,7 +2679,8 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
         };
 
         const onMoveStart = () => {
-            if (!icIsMovingRef.current) {
+            // ✅ RAF 중복 방지: 이미 실행 중이면 새로 시작하지 않음
+            if (!icIsMovingRef.current && icRafIdRef.current === 0) {
                 icIsMovingRef.current = true;
                 animationLoop();
             }
