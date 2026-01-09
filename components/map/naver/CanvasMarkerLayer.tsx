@@ -35,8 +35,9 @@ export default function CanvasMarkerLayer({ map }: CanvasMarkerLayerProps) {
             return;
         }
 
-        // 렌더러 생성
-        rendererRef.current = new CanvasMarkerRenderer(mapboxGL);
+        // 렌더러 생성 및 지도에 추가
+        rendererRef.current = new CanvasMarkerRenderer();
+        rendererRef.current.addToMap(mapboxGL);
 
         // 클릭 핸들러
         rendererRef.current.setOnClick(async (marker: AnyMarker) => {
