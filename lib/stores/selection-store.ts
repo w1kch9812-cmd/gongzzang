@@ -12,8 +12,12 @@ import type {
 } from '@/types/data';
 import type { Selection } from './types';
 
+// 마커 타입에 따른 초기 탭
+export type ParcelInitialTab = 'basic' | 'listing' | 'auction' | 'factory' | 'knowledgeCenter';
+
 interface SelectionState {
     selection: Selection;
+    parcelInitialTab: ParcelInitialTab | null; // 마커 클릭 시 열릴 초기 탭
     focusMode: boolean;
     focusedComplex: IndustrialComplexDetail | null;
     focusModeShowLots: boolean;
@@ -26,7 +30,7 @@ interface SelectionActions {
     clearSelection: () => void;
 
     // 호환성: 개별 setter
-    setSelectedParcel: (parcel: ParcelDetail | null) => void;
+    setSelectedParcel: (parcel: ParcelDetail | null, initialTab?: ParcelInitialTab) => void;
     setSelectedComplex: (complex: IndustrialComplexDetail | null) => void;
     setSelectedKnowledgeCenter: (center: KnowledgeIndustryCenter | null) => void;
     setSelectedFactory: (factory: Factory | null) => void;
@@ -52,6 +56,7 @@ export const useSelectionStore = create<SelectionStore>()(
     subscribeWithSelector((set, get) => ({
         // State
         selection: null,
+        parcelInitialTab: null,
         focusMode: false,
         focusedComplex: null,
         focusModeShowLots: true,
@@ -80,8 +85,11 @@ export const useSelectionStore = create<SelectionStore>()(
         setSelection: (selection) => set({ selection }),
         clearSelection: () => set({ selection: null }),
 
-        setSelectedParcel: (parcel) => {
-            set({ selection: parcel ? { type: 'parcel', data: parcel } : null });
+        setSelectedParcel: (parcel, initialTab) => {
+            set({
+                selection: parcel ? { type: 'parcel', data: parcel } : null,
+                parcelInitialTab: initialTab ?? null,
+            });
             // UI 패널 열기 (동기적으로 처리)
             if (parcel) {
                 // 동적 import 대신 직접 호출 (이미 로드된 모듈)

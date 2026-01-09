@@ -230,6 +230,7 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                     label,               // 표시용 라벨
                     count,               // 그룹 내 공장 수
                     businessType: first.businessType || '',
+                    pnu: first.pnu || '', // 필지 PNU (클릭 시 필지 상세 로드용)
                 },
                 geometry: {
                     type: 'Point' as const,
@@ -295,20 +296,21 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
     }, []);
 
     const handleParcelMouseUp = useCallback((e: any) => {
-        // ✅ Store에서 마커 클릭 상태 가져오기 (전역 window 오염 제거)
-        const markerClickingId = useMapStore.getState().markerClickingId;
+        // Canvas 마커 히트 테스트 (클릭 좌표에 마커가 있으면 폴리곤 클릭 무시)
+        const canvasRenderer = useMapStore.getState().canvasMarkerRenderer;
+        const markerAtPoint = canvasRenderer?.getMarkerAtPoint(e.point.x, e.point.y);
 
         logger.log('🖱️ [Parcel] mouseup 이벤트 발생', {
             hasClickStart: !!clickStartRef.current,
-            markerClicking: !!markerClickingId,
+            markerAtPoint: markerAtPoint?.id ?? null,
             features: e.features?.length
         });
 
         if (!clickStartRef.current) return;
 
-        // 마커 클릭 중인 경우 폴리곤 클릭 무시 (마커와 폴리곤 이벤트 충돌 방지)
-        if (markerClickingId) {
-            logger.log('⏭️ [Parcel] 마커 클릭 중 - 폴리곤 클릭 무시');
+        // 클릭 좌표에 Canvas 마커가 있으면 폴리곤 클릭 무시
+        if (markerAtPoint) {
+            logger.log(`⏭️ [Parcel] Canvas 마커 클릭 - 폴리곤 클릭 무시 (${markerAtPoint.id})`);
             clickStartRef.current = null;
             return;
         }
@@ -1204,22 +1206,25 @@ function UnifiedPolygonGLLayerInner({ map }: Props) {
                 },
             });
 
-            // 공장 아이콘 클릭 시 상세 정보 표시 (핸들러 저장)
+            // 공장 아이콘 클릭 시 해당 필지의 상세 정보 표시 (입주기업 탭으로)
             factoryClickHandlerRef.current = (e: any) => {
                 const features = mbMap.queryRenderedFeatures(e.point, { layers: [LAYER_IDS.markers.factories.points] });
                 if (!features.length) return;
 
-                const factoryId = features[0].properties.id;
-                logger.log(`🏭 [Factory 클릭] id: ${factoryId}`);
+                const factoryPnu = features[0].properties.pnu;
+                const factoryName = features[0].properties.name;
+                logger.log(`🏭 [Factory 클릭] name: ${factoryName}, pnu: ${factoryPnu}`);
 
-                // 상세 정보 로드
-                import('@/lib/data/loadData').then(({ loadFactoryDetail }) => {
-                    loadFactoryDetail(factoryId).then((detail) => {
-                        if (detail) {
-                            useSelectionStore.getState().setSelectedFactory(detail);
-                        }
+                // PNU로 필지 상세 로드 후 공장(입주기업) 탭으로 열기
+                if (factoryPnu) {
+                    import('@/lib/data/loadData').then(({ loadParcelDetail }) => {
+                        loadParcelDetail(factoryPnu).then((detail) => {
+                            if (detail) {
+                                useSelectionStore.getState().setSelectedParcel(detail, 'factory');
+                            }
+                        });
                     });
-                });
+                }
             };
             mbMap.on('click', LAYER_IDS.markers.factories.points, factoryClickHandlerRef.current);
 

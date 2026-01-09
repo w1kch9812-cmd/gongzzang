@@ -500,7 +500,7 @@ export default function DetailPanel() {
             closeOnEscape={false}
             zIndex={PANEL.side.zIndex}
         >
-            <ParcelDetailContent parcel={selectedParcel} />
+            <ParcelDetailContent parcel={selectedParcel} onClose={handleClose} />
         </Drawer>
     );
 }

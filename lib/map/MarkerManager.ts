@@ -48,7 +48,6 @@ export class MarkerManager {
     private map: naver.maps.Map | null = null;
     private hoveredMarkerId: string | null = null;
     private destroyedCount: number = 0;  // 풀 초과로 파괴된 마커 수 (디버깅용)
-    private clickTimerRef: NodeJS.Timeout | null = null;  // ✅ race condition 방지
 
     // ⚡ 성능 측정용 카운터
     private stats = {
@@ -299,19 +298,9 @@ export class MarkerManager {
             onHoverLeave?.();
         };
 
-        // mousedown 이벤트도 차단하여 Mapbox GL 폴리곤 클릭과 충돌 방지
+        // mousedown 이벤트 차단 (Mapbox GL 폴리곤 클릭과 충돌 방지)
         const handleMouseDown = (e: Event) => {
             e.stopPropagation();
-            // ✅ 이전 타이머 취소 (race condition 방지)
-            if (this.clickTimerRef) {
-                clearTimeout(this.clickTimerRef);
-            }
-            // ✅ Store 사용 (전역 window 오염 제거)
-            useMapStore.getState().setMarkerClickingId(markerId);
-            this.clickTimerRef = setTimeout(() => {
-                useMapStore.getState().setMarkerClickingId(null);
-                this.clickTimerRef = null;
-            }, 150);  // 100ms → 150ms (더 안정적)
         };
 
         container.addEventListener('mousedown', handleMouseDown);
@@ -398,12 +387,6 @@ export class MarkerManager {
 
         this.hoveredMarkerId = null;
         this.map = null; // 지도 참조도 해제
-
-        // ✅ 클릭 타이머 정리
-        if (this.clickTimerRef) {
-            clearTimeout(this.clickTimerRef);
-            this.clickTimerRef = null;
-        }
 
         logger.log(`[MarkerManager] disposed: ${cleanedCount}개 마커 정리됨`);
     }

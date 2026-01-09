@@ -5,6 +5,7 @@ import { create } from 'zustand';
 import { subscribeWithSelector } from 'zustand/middleware';
 import { useShallow } from 'zustand/react/shallow';
 import type { ViewportBounds } from '@/types/data';
+import type { CanvasMarkerRenderer } from '@/lib/map/CanvasMarkerRenderer';
 
 // 겹치는 실거래 마커 데이터 (Deck.gl 점 렌더링용)
 export interface OverlappingTxMarker {
@@ -55,8 +56,8 @@ interface MapState {
     currentBounds: ViewportBounds | null;
     currentLocation: { sido: string; sig: string; emd: string } | null;
     currentMapType: 'normal' | 'satellite' | 'hybrid' | 'terrain';
-    // 마커 클릭 중 상태 (애니메이션용)
-    markerClickingId: string | null;
+    // Canvas 마커 렌더러 인스턴스 (히트 테스트용)
+    canvasMarkerRenderer: CanvasMarkerRenderer | null;
     // 겹치는 실거래 마커 (Deck.gl로 점 렌더링)
     overlappingTxMarkers: OverlappingTxMarker[];
     // 비겹침 실거래 마커 (Canvas로 렌더링)
@@ -74,7 +75,7 @@ interface MapActions {
     setCurrentBounds: (bounds: ViewportBounds) => void;
     setCurrentLocation: (location: { sido: string; sig: string; emd: string } | null) => void;
     setMapType: (type: 'normal' | 'satellite' | 'hybrid' | 'terrain') => void;
-    setMarkerClickingId: (id: string | null) => void;
+    setCanvasMarkerRenderer: (renderer: CanvasMarkerRenderer | null) => void;
     zoomIn: () => void;
     zoomOut: () => void;
     setOverlappingTxMarkers: (markers: OverlappingTxMarker[]) => void;
@@ -94,7 +95,7 @@ export const useMapStore = create<MapStore>()(
         currentBounds: null,
         currentLocation: null,
         currentMapType: 'normal',
-        markerClickingId: null,
+        canvasMarkerRenderer: null,
         overlappingTxMarkers: [],
         nonOverlappingTxMarkers: [],
         listingCanvasMarkers: [],
@@ -106,7 +107,7 @@ export const useMapStore = create<MapStore>()(
         setCurrentZoom: (zoom) => set({ currentZoom: zoom }),
         setCurrentBounds: (bounds) => set({ currentBounds: bounds }),
         setCurrentLocation: (location) => set({ currentLocation: location }),
-        setMarkerClickingId: (id) => set({ markerClickingId: id }),
+        setCanvasMarkerRenderer: (renderer) => set({ canvasMarkerRenderer: renderer }),
 
         setMapType: (type) => {
             const { mapInstance } = get();

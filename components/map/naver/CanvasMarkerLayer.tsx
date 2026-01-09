@@ -6,7 +6,7 @@
 
 import { useEffect, useRef } from 'react';
 import { useMapStore } from '@/lib/stores/map-store';
-import { useSelectionStore } from '@/lib/stores/selection-store';
+import { useSelectionStore, type ParcelInitialTab } from '@/lib/stores/selection-store';
 import { CanvasMarkerRenderer, type TransactionMarker, type ListingMarker, type AuctionMarker, type AnyMarker } from '@/lib/map/CanvasMarkerRenderer';
 import { loadParcelDetail } from '@/lib/data/loadData';
 import { logger } from '@/lib/utils/logger';
@@ -39,23 +39,34 @@ export default function CanvasMarkerLayer({ map }: CanvasMarkerLayerProps) {
         rendererRef.current = new CanvasMarkerRenderer();
         rendererRef.current.addToMap(mapboxGL);
 
-        // 클릭 핸들러
+        // 스토어에 렌더러 등록 (폴리곤 레이어에서 히트 테스트용)
+        useMapStore.getState().setCanvasMarkerRenderer(rendererRef.current);
+
+        // 클릭 핸들러 - 모든 마커 타입에서 필지 상세 로드
+        // 마커 타입에 따른 초기 탭 매핑
+        const tabMap: Record<string, ParcelInitialTab> = {
+            transaction: 'basic',
+            listing: 'listing',
+            auction: 'auction',
+        };
+
         rendererRef.current.setOnClick(async (marker: AnyMarker) => {
             logger.log(`🎨 [CanvasMarkerLayer] 마커 클릭: ${marker.id}, type=${marker.type}`);
 
-            // 실거래 마커인 경우 상세 정보 로드
-            if (marker.type === 'transaction') {
+            // 실거래/매물/경매 마커 클릭 시 상세 정보 로드
+            if (marker.type === 'transaction' || marker.type === 'listing' || marker.type === 'auction') {
                 const detail = await loadParcelDetail(marker.id);
                 if (detail) {
-                    setSelectedParcel(detail);
+                    const initialTab = tabMap[marker.type] || 'basic';
+                    setSelectedParcel(detail, initialTab);
                 }
             }
-            // TODO: 다른 마커 타입 클릭 처리
         });
 
         logger.log('🎨 [CanvasMarkerLayer] 초기화 완료');
 
         return () => {
+            useMapStore.getState().setCanvasMarkerRenderer(null);
             rendererRef.current?.destroy();
             rendererRef.current = null;
         };

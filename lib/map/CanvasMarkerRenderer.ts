@@ -3,6 +3,7 @@
 // 모든 마커 타입을 Canvas 2D로 직접 그리기
 
 import { logger } from '@/lib/utils/logger';
+import { COLORS as STYLE_COLORS } from '@/lib/config/style.config';
 
 // ========== 마커 타입 ==========
 
@@ -134,34 +135,83 @@ export type AnyMarker =
 // UnifiedMarkerLayer와 호환성을 위한 alias
 export type CanvasMarker = AnyMarker;
 
-// ========== 색상 상수 ==========
+// ========== 색상 상수 (style.config.ts와 동기화) ==========
 
 const COLORS = {
-    // 실거래 유형
-    factory: { label: '공장', color: '#8B5CF6' },
-    warehouse: { label: '창고', color: '#F59E0B' },
-    land: { label: '토지', color: '#10B981' },
-    'knowledge-center': { label: '지산', color: '#3B82F6' },
+    // 실거래 유형별 색상 (점 마커와 일치)
+    factory: { label: '공장', color: STYLE_COLORS.entity.factory },
+    warehouse: { label: '창고', color: STYLE_COLORS.entity.warehouse },
+    land: { label: '토지', color: STYLE_COLORS.entity.land },
+    'knowledge-center': { label: '지산', color: STYLE_COLORS.entity.knowledgeCenter },
 
     // 마커 테마
-    listing: { main: '#2563EB', bg: '#EFF6FF', dark: '#1E40AF' },
-    auction: { main: '#DC2626', bg: '#FEF2F2', dark: '#991B1B' },
-    industrial: { main: '#FF6B35', bg: '#FFF7ED' },
-    knowledge: { main: '#0066FF', bg: '#EFF6FF' },
-    factoryMarker: { main: '#6366F1', glow: 'rgba(99, 102, 241, 0.4)' },
-    warehouseMarker: { main: '#EA580C', glow: 'rgba(234, 88, 12, 0.4)' },
+    listing: { main: STYLE_COLORS.entity.listing, bg: '#EFF6FF', dark: '#1E40AF' },
+    auction: { main: STYLE_COLORS.entity.auction, bg: '#FEF2F2', dark: '#991B1B' },
+    industrial: { main: STYLE_COLORS.entity.complex, bg: '#FFF7ED' },
+    knowledge: { main: STYLE_COLORS.entity.knowledgeCenter, bg: '#EFF6FF' },
+    factoryMarker: { main: STYLE_COLORS.entity.factory, glow: STYLE_COLORS.entity.factoryGlow },
+    warehouseMarker: { main: STYLE_COLORS.entity.warehouse, glow: 'rgba(234, 88, 12, 0.4)' },
 };
 
 const SQM_PER_PYEONG = 3.3058;
 
+// 지목 코드 → 라벨 (지번 마지막 한글에서 추출)
+const LAND_CATEGORY_LABELS: Record<string, string> = {
+    '전': '전',
+    '답': '답',
+    '과': '과수원',
+    '목': '목장',
+    '임': '임야',
+    '광': '광천지',
+    '염': '염전',
+    '대': '대지',
+    '장': '공장',
+    '공': '공원',
+    '학': '학교',
+    '차': '주차장',
+    '주': '주유소',
+    '창': '창고',
+    '도': '도로',
+    '철': '철도',
+    '제': '제방',
+    '천': '하천',
+    '구': '구거',
+    '유': '유지',
+    '양': '양어장',
+    '수': '수도',
+    '원': '공원',
+    '체': '체육',
+    '종': '종교',
+    '사': '사적지',
+    '묘': '묘지',
+    '잡': '잡종지',
+};
+
+// 지번 마지막 한글에서 지목 추출
+function extractLandCategory(jibun: string | undefined): string | null {
+    if (!jibun) return null;
+    const match = jibun.match(/([가-힣])$/);
+    return match ? match[1] : null;
+}
+
 function getTypeInfo(propertyType?: string, jibun?: string): { label: string; color: string } {
-    if (propertyType && COLORS[propertyType as keyof typeof COLORS]) {
+    // 공장, 지산, 창고는 그대로 사용
+    if (propertyType && propertyType !== 'land' && COLORS[propertyType as keyof typeof COLORS]) {
         const c = COLORS[propertyType as keyof typeof COLORS];
         if ('label' in c) return c;
     }
-    if (jibun?.includes('공장')) return COLORS.factory;
-    if (jibun?.includes('창고')) return COLORS.warehouse;
-    return { label: '토지', color: '#6B7280' };
+
+    // 토지: 지번에서 지목 추출
+    const landCat = extractLandCategory(jibun);
+    if (landCat && LAND_CATEGORY_LABELS[landCat]) {
+        return {
+            label: LAND_CATEGORY_LABELS[landCat],
+            color: COLORS.land.color,
+        };
+    }
+
+    // 기본값: 토지
+    return { label: '토지', color: COLORS.land.color };
 }
 
 function truncateName(name: string, maxLen = 8): string {
@@ -176,7 +226,9 @@ export class CanvasMarkerRenderer {
     private ctx!: CanvasRenderingContext2D;
     private markers: AnyMarker[] = [];
     private selectedMarkerId: string | null = null;
+    private hoveredMarkerId: string | null = null;
     private onClick: ((marker: AnyMarker) => void) | null = null;
+    private onHover: ((marker: AnyMarker | null) => void) | null = null;
     private hitAreas: { id: string; x: number; y: number; w: number; h: number }[] = [];
 
     private fontFamily = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif';
@@ -211,7 +263,10 @@ export class CanvasMarkerRenderer {
     private bindEvents() {
         this.mapboxGL.on('render', this.render);
         this.mapboxGL.on('resize', this.handleResize);
-        this.mapboxGL.getCanvas().addEventListener('click', this.handleClick);
+        // capture: true로 이벤트를 먼저 잡아서 마커 영역이면 전파 차단
+        this.mapboxGL.getCanvas().addEventListener('click', this.handleClick, { capture: true });
+        this.mapboxGL.getCanvas().addEventListener('mousemove', this.handleMouseMove);
+        this.mapboxGL.getCanvas().addEventListener('mouseleave', this.handleMouseLeave);
     }
 
     private handleResize = () => {
@@ -238,10 +293,59 @@ export class CanvasMarkerRenderer {
             if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
                 const marker = this.markers.find(m => m.id === h.id);
                 if (marker) {
+                    // 마커 클릭 시 이벤트 전파 중단 (필지 폴리곤 클릭 방지)
+                    e.stopPropagation();
+                    e.preventDefault();
                     this.onClick(marker);
                     return;
                 }
             }
+        }
+    };
+
+    private handleMouseMove = (e: MouseEvent) => {
+        const rect = this.canvas.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        let foundId: string | null = null;
+
+        // 역순으로 검색 (가장 위에 그려진 마커 우선)
+        for (let i = this.hitAreas.length - 1; i >= 0; i--) {
+            const h = this.hitAreas[i];
+            if (x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h) {
+                foundId = h.id;
+                break;
+            }
+        }
+
+        if (foundId !== this.hoveredMarkerId) {
+            this.hoveredMarkerId = foundId;
+
+            // 커서 스타일 변경
+            this.mapboxGL.getCanvas().style.cursor = foundId ? 'pointer' : '';
+
+            // 호버 콜백 호출
+            if (this.onHover) {
+                const marker = foundId ? this.markers.find(m => m.id === foundId) : null;
+                this.onHover(marker ?? null);
+            }
+
+            // 호버된 마커가 있으면 다시 렌더링 (z-index 상승 효과)
+            this.render();
+        }
+    };
+
+    private handleMouseLeave = () => {
+        if (this.hoveredMarkerId) {
+            this.hoveredMarkerId = null;
+            this.mapboxGL.getCanvas().style.cursor = '';
+
+            if (this.onHover) {
+                this.onHover(null);
+            }
+
+            this.render();
         }
     };
 
@@ -260,24 +364,39 @@ export class CanvasMarkerRenderer {
         const minLat = bounds.getSouth();
         const maxLat = bounds.getNorth();
 
-        // 남쪽부터 그리기 (z-order)
-        const sorted = [...this.markers]
-            .filter(m => m.lng >= minLng && m.lng <= maxLng && m.lat >= minLat && m.lat <= maxLat)
+        // 남쪽부터 그리기 (z-order), 호버/선택된 마커는 제외하고 마지막에 그림
+        const visible = this.markers.filter(m => m.lng >= minLng && m.lng <= maxLng && m.lat >= minLat && m.lat <= maxLat);
+
+        // 호버/선택된 마커를 마지막에 그리기 위해 분리
+        const hoveredMarker = this.hoveredMarkerId ? visible.find(m => m.id === this.hoveredMarkerId) : null;
+        const selectedMarker = this.selectedMarkerId ? visible.find(m => m.id === this.selectedMarkerId) : null;
+
+        const sorted = visible
+            .filter(m => m.id !== this.hoveredMarkerId && m.id !== this.selectedMarkerId)
             .sort((a, b) => b.lat - a.lat);
+
+        // 호버된 마커는 선택된 마커보다 먼저 (선택이 가장 위)
+        if (hoveredMarker && hoveredMarker.id !== this.selectedMarkerId) {
+            sorted.push(hoveredMarker);
+        }
+        if (selectedMarker) {
+            sorted.push(selectedMarker);
+        }
 
         for (const m of sorted) {
             const pt = this.mapboxGL.project([m.lng, m.lat]);
             const isSelected = m.id === this.selectedMarkerId;
+            const isHovered = m.id === this.hoveredMarkerId;
 
             switch (m.type) {
                 case 'transaction':
-                    this.drawTransaction(ctx, m, pt, dpr, isSelected);
+                    this.drawTransaction(ctx, m, pt, dpr, isSelected, isHovered);
                     break;
                 case 'listing':
-                    this.drawListing(ctx, m, pt, dpr, isSelected);
+                    this.drawListing(ctx, m, pt, dpr, isSelected, isHovered);
                     break;
                 case 'auction':
-                    this.drawAuction(ctx, m, pt, dpr, isSelected);
+                    this.drawAuction(ctx, m, pt, dpr, isSelected, isHovered);
                     break;
                 case 'region-cluster':
                     this.drawRegionCluster(ctx, m, pt, dpr);
@@ -308,8 +427,10 @@ export class CanvasMarkerRenderer {
     };
 
     // ========== 실거래 마커 ==========
-    private drawTransaction(ctx: CanvasRenderingContext2D, m: TransactionMarker, pt: { x: number; y: number }, dpr: number, isSelected: boolean) {
+    private drawTransaction(ctx: CanvasRenderingContext2D, m: TransactionMarker, pt: { x: number; y: number }, dpr: number, isSelected: boolean, isHovered: boolean) {
         const typeInfo = getTypeInfo(m.propertyType, m.jibun);
+        // 호버/선택 상태에 따른 스타일
+        const isHighlighted = isSelected || isHovered;
 
         let dateStr = '';
         let isRecent = false;
@@ -357,23 +478,23 @@ export class CanvasMarkerRenderer {
 
         ctx.save();
 
-        // 그림자
-        ctx.shadowColor = isSelected ? 'rgba(59, 130, 246, 0.3)' : 'rgba(0, 0, 0, 0.15)';
-        ctx.shadowBlur = (isSelected ? 12 : 6) * dpr;
+        // 그림자 (호버/선택 시 더 강조)
+        ctx.shadowColor = isHighlighted ? 'rgba(59, 130, 246, 0.35)' : 'rgba(0, 0, 0, 0.15)';
+        ctx.shadowBlur = (isHighlighted ? 14 : 6) * dpr;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = (isSelected ? 4 : 2) * dpr;
+        ctx.shadowOffsetY = (isHighlighted ? 4 : 2) * dpr;
 
         // 배경
-        const radius = isSelected ? 6 * dpr : markerH / 2;
+        const radius = isHighlighted ? 6 * dpr : markerH / 2;
         ctx.beginPath();
         ctx.roundRect(mx, my, markerW, markerH, radius);
-        ctx.fillStyle = isSelected ? '#ffffff' : 'rgba(255, 255, 255, 0.95)';
+        ctx.fillStyle = isHighlighted ? '#ffffff' : 'rgba(255, 255, 255, 0.95)';
         ctx.fill();
 
-        // 테두리
+        // 테두리 (호버/선택 시 파란색)
         ctx.shadowColor = 'transparent';
-        ctx.strokeStyle = isSelected ? '#3B82F6' : 'rgba(200, 200, 200, 0.8)';
-        ctx.lineWidth = (isSelected ? 2 : 1) * dpr;
+        ctx.strokeStyle = isHighlighted ? '#3B82F6' : 'rgba(200, 200, 200, 0.8)';
+        ctx.lineWidth = (isSelected ? 2.5 : isHovered ? 2 : 1) * dpr;
         ctx.stroke();
 
         // 텍스트
@@ -414,7 +535,7 @@ export class CanvasMarkerRenderer {
     }
 
     // ========== 매물 마커 (pill 형태, 심플) ==========
-    private drawListing(ctx: CanvasRenderingContext2D, m: ListingMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+    private drawListing(ctx: CanvasRenderingContext2D, m: ListingMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean, isHovered: boolean) {
         const dealLabel = m.dealType === '임대' ? '임대' : m.dealType === '분양' ? '분양' : m.dealType === '전세' ? '전세' : '매매';
 
         // 텍스트 측정
@@ -449,17 +570,25 @@ export class CanvasMarkerRenderer {
 
         ctx.save();
 
-        // 그림자 (파란색 계열)
-        ctx.shadowColor = 'rgba(37, 99, 235, 0.25)';
-        ctx.shadowBlur = 8 * dpr;
+        // 그림자 (파란색 계열, 호버 시 더 강조)
+        ctx.shadowColor = isHovered ? 'rgba(37, 99, 235, 0.45)' : 'rgba(37, 99, 235, 0.25)';
+        ctx.shadowBlur = (isHovered ? 14 : 8) * dpr;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 2 * dpr;
+        ctx.shadowOffsetY = (isHovered ? 4 : 2) * dpr;
 
-        // 배경 (pill 형태)
+        // 배경 (pill 형태, 호버 시 더 밝은 색)
         ctx.beginPath();
         ctx.roundRect(mx, my, markerW, markerH, markerH / 2);
-        ctx.fillStyle = '#2563EB';  // 파란 배경
+        ctx.fillStyle = isHovered ? '#3B82F6' : '#2563EB';
         ctx.fill();
+
+        // 호버 시 테두리 추가
+        if (isHovered) {
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#1D4ED8';
+            ctx.lineWidth = 2 * dpr;
+            ctx.stroke();
+        }
 
         ctx.shadowColor = 'transparent';
 
@@ -493,7 +622,7 @@ export class CanvasMarkerRenderer {
     }
 
     // ========== 경매 마커 (pill 형태, 심플) ==========
-    private drawAuction(ctx: CanvasRenderingContext2D, m: AuctionMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean) {
+    private drawAuction(ctx: CanvasRenderingContext2D, m: AuctionMarker, pt: { x: number; y: number }, dpr: number, _isSelected: boolean, isHovered: boolean) {
         // 유찰 횟수가 있으면 표시
         const failBadge = m.failCount && m.failCount > 0 ? `${m.failCount}회` : '';
 
@@ -529,17 +658,25 @@ export class CanvasMarkerRenderer {
 
         ctx.save();
 
-        // 그림자 (빨간색 계열)
-        ctx.shadowColor = 'rgba(220, 38, 38, 0.25)';
-        ctx.shadowBlur = 8 * dpr;
+        // 그림자 (빨간색 계열, 호버 시 더 강조)
+        ctx.shadowColor = isHovered ? 'rgba(220, 38, 38, 0.45)' : 'rgba(220, 38, 38, 0.25)';
+        ctx.shadowBlur = (isHovered ? 14 : 8) * dpr;
         ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 2 * dpr;
+        ctx.shadowOffsetY = (isHovered ? 4 : 2) * dpr;
 
-        // 배경 (pill 형태)
+        // 배경 (pill 형태, 호버 시 더 밝은 색)
         ctx.beginPath();
         ctx.roundRect(mx, my, markerW, markerH, markerH / 2);
-        ctx.fillStyle = '#DC2626';  // 빨간 배경
+        ctx.fillStyle = isHovered ? '#EF4444' : '#DC2626';
         ctx.fill();
+
+        // 호버 시 테두리 추가
+        if (isHovered) {
+            ctx.shadowColor = 'transparent';
+            ctx.strokeStyle = '#B91C1C';
+            ctx.lineWidth = 2 * dpr;
+            ctx.stroke();
+        }
 
         ctx.shadowColor = 'transparent';
 
@@ -1158,11 +1295,29 @@ export class CanvasMarkerRenderer {
         this.onClick = cb;
     }
 
+    setOnHover(cb: (m: AnyMarker | null) => void) {
+        this.onHover = cb;
+    }
+
+    /** 주어진 화면 좌표에 마커가 있는지 확인 (폴리곤 클릭 충돌 방지용) */
+    getMarkerAtPoint(screenX: number, screenY: number): AnyMarker | null {
+        for (let i = this.hitAreas.length - 1; i >= 0; i--) {
+            const h = this.hitAreas[i];
+            if (screenX >= h.x && screenX <= h.x + h.w && screenY >= h.y && screenY <= h.y + h.h) {
+                return this.markers.find(m => m.id === h.id) ?? null;
+            }
+        }
+        return null;
+    }
+
     destroy() {
         if (!this.mapboxGL) return;
         this.mapboxGL.off('render', this.render);
         this.mapboxGL.off('resize', this.handleResize);
-        this.mapboxGL.getCanvas().removeEventListener('click', this.handleClick);
+        const mapCanvas = this.mapboxGL.getCanvas();
+        mapCanvas.removeEventListener('click', this.handleClick, { capture: true });
+        mapCanvas.removeEventListener('mousemove', this.handleMouseMove);
+        mapCanvas.removeEventListener('mouseleave', this.handleMouseLeave);
         this.canvas.remove();
         logger.log('🎨 [CanvasMarkerRenderer] 정리 완료');
     }

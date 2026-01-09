@@ -139,6 +139,8 @@ const formatTotalPrice = (price: number): string => {
     return `${price}만`;
 };
 
+// ========== 마커 바운딩박스 계산 (AABB 충돌 검사용) ==========
+
 // ========== 산업단지 폴리곤 추적 ==========
 
 interface CachedPolygon {
@@ -1794,9 +1796,9 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
                         });
                     }
 
-                    // 2. 겹침 감지 (그리드 기반 최적화: O(n²) → O(n))
-                    const OVERLAP_THRESHOLD_PX = 30; // 30px 이내면 겹침으로 판단
-                    const GRID_SIZE = OVERLAP_THRESHOLD_PX; // 그리드 셀 크기
+                    // 2. 겹침 감지 (40px 고정 거리 + 그리드 기반 최적화: O(n²) → O(n))
+                    const OVERLAP_DISTANCE = 40; // 겹침 판단 거리 (px)
+                    const GRID_SIZE = OVERLAP_DISTANCE * 2; // 그리드 셀 크기
                     overlapSet = new Set<number>(); // 겹치는 마커 인덱스
                     const grid = new Map<string, number[]>(); // 그리드 셀 → 마커 인덱스 배열
 
@@ -1823,10 +1825,11 @@ function UnifiedMarkerLayerInner({ map, skipTransactionMarkers = false }: Unifie
 
                                 for (const j of neighbors) {
                                     if (i >= j) continue; // 중복 체크 방지
+                                    // 40px 거리 내 겹침 판단
                                     const dx2 = allTxPoints[i].screenX - allTxPoints[j].screenX;
                                     const dy2 = allTxPoints[i].screenY - allTxPoints[j].screenY;
                                     const dist = Math.sqrt(dx2 * dx2 + dy2 * dy2);
-                                    if (dist < OVERLAP_THRESHOLD_PX) {
+                                    if (dist < OVERLAP_DISTANCE) {
                                         overlapSet.add(i);
                                         overlapSet.add(j);
                                     }
